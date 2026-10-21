@@ -1,0 +1,1 @@
+# O servidor só usa a biblioteca padrão do Python; não há dependências.
