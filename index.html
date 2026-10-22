@@ -162,6 +162,24 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 #loading{position:fixed;inset:0;z-index:100;background:#121a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-weight:700}
 @media (max-width:1100px){#bar{width:calc(100vw - 28px);min-width:0;bottom:180px}.rcol{width:220px}#chat{width:280px}#listen{right:250px}.ctrlhint{display:none}#pop{bottom:320px}}
 @media (max-width:800px){.lgrid{grid-template-columns:1fr}.teams{grid-template-columns:1fr}.pvwrap{height:320px}.chooser{max-height:none}.rcol{display:none}#mini{display:none}#chat{width:calc(100vw - 28px);left:14px;bottom:10px}#msgs{height:110px!important}#bar{bottom:64px;padding:4px}.bbtn{font-size:10.5px;padding:7px 2px;gap:3px}.brow2{margin-top:2px;padding-top:2px}.brow2 .bbtn{padding:5px 10px}#joy{bottom:200px;left:16px}#jumpBtn{bottom:215px;right:16px}#hp,#raceHud{top:100px}.info{top:52px;padding:7px 10px}.htop .hide-m{display:none}.ltop .hide-m{display:none}.ltop{padding:10px 12px;gap:6px}.ltop .logo>div{display:none}.lwrap{padding:14px 12px 30px}.card{padding:16px}.chars{grid-template-columns:repeat(2,1fr)}.htop{gap:5px;padding:8px}.htop .counts{display:none}.display{font-size:32px}#listen{right:14px;left:14px;width:auto;top:100px}#pop{bottom:180px;max-height:calc(100vh - 240px)}}
+/* celular deitado (tela baixa e larga): HUD compacto nas bordas, centro livre para o jogo */
+@media (max-height:500px) and (orientation:landscape){
+  .htop{padding:6px 10px;gap:5px}.htop .pill{height:30px;padding:0 10px;font-size:12px}.iconbtn{width:30px;height:30px;font-size:13px}.htop .hide-m,.htop .counts{display:none}
+  .info{top:44px;padding:5px 9px;min-width:0}.info b{font-size:11px}.info small{font-size:10.5px}
+  .rcol{display:flex;top:44px;width:165px;gap:4px}.rcard{padding:6px 10px}.rcard small,.rcard .bar{display:none}.rcard b{font-size:12px}
+  #mini{display:none}.ctrlhint{display:none}
+  #chat{width:250px;left:auto;right:10px;bottom:10px}#msgs{height:72px!important}.chat-tools{display:none}.chat-head{padding:7px 10px}
+  #bar{bottom:8px;width:auto;min-width:0;left:150px;right:270px;transform:none;padding:4px}
+  .bbtn{font-size:10px;padding:5px 2px;gap:2px}.bbtn svg{width:16px;height:16px}.brow2{margin-top:2px;padding-top:2px}.brow2 .bbtn{padding:4px 8px}
+  #pop{top:44px;bottom:auto;left:150px;right:270px;width:auto;transform:none;max-height:calc(100vh - 150px)}
+  #joy{left:14px;bottom:14px;width:110px;height:110px}#joy i{left:30px;top:30px}#jumpBtn{right:20px;bottom:64px;width:56px;height:56px}
+  #hp,#raceHud{top:44px}#listen{top:44px;left:auto;right:185px;width:260px;max-height:calc(100vh - 60px)}
+  #modal{max-height:calc(100vh - 16px);padding:16px}
+  .lgrid{grid-template-columns:1fr 1fr}.pvwrap{height:300px}.chooser{max-height:none;min-height:0}.display{font-size:30px}
+}
+#rotate{position:fixed;inset:0;z-index:95;background:#121a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+#rotate .ic{font-size:64px;animation:rot 1.6s ease-in-out infinite}
+@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 </style>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
 </head>
@@ -178,6 +196,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="pill gold" data-act="premium">♛ Premium</button>
     <button class="pill" data-act="mapas">Mapas</button>
     <button class="pill green hide-m" data-act="anunciar">📺 Anunciar no jogo</button>
+    <button class="pill fsBtn" data-act="fullscreen" title="Tela cheia (F11)">⛶ <span class="hide-m fsTxt">Tela cheia</span></button>
     <button class="iconbtn" data-act="config" title="Configurações">⚙</button>
     <button class="iconbtn" data-act="ajuda" title="Ajuda">?</button>
   </header>
@@ -231,7 +250,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <div class="sp"></div>
     <div class="counts" id="counts"></div>
     <button class="iconbtn" id="sndBtn" title="Som">🔊</button>
-    <button class="iconbtn hide-m" data-act="fullscreen" title="Tela cheia">⛶</button>
+    <button class="pill fsBtn" data-act="fullscreen" title="Tela cheia (F11)">⛶ <span class="hide-m fsTxt">Tela cheia</span></button>
     <button class="iconbtn" data-act="config" title="Configurações">⚙</button>
     <button class="iconbtn" data-act="ajuda" title="Ajuda">?</button>
     <button class="pill" data-act="sair">Sair</button>
@@ -273,6 +292,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 <div id="botCard" class="panel hidden"></div>
 <div id="joy" class="hidden"><i></i></div><button id="jumpBtn" class="hidden">PULAR</button>
 <div id="toast"></div>
+<div id="rotate" class="hidden"><div class="ic">📱</div><b style="font-size:20px">Gire o celular</b><p class="mut">A avenida é na horizontal. Deite o celular para jogar.</p><button class="btn gold" id="rotBtn">Tela cheia na horizontal</button></div>
 <div id="modalWrap" class="hidden"><div id="modal"></div></div>
 
 <script type="module">
@@ -2043,9 +2063,25 @@ $('#nick').addEventListener('input', () => { prof.nick = $('#nick').value; save(
 function validNick() { const n = $('#nick').value.trim(); if (n.length < 2 || n.length > 16) return 'Seu apelido precisa ter de 2 a 16 caracteres.'; if (/\S+@\S+\.\S+/.test(n) || /\d{8,}/.test(n.replace(/\D/g, ''))) return 'Sem e-mail nem telefone no apelido.'; if (filterBad(n) !== n) return 'Escolha um apelido sem palavrões.'; return null; }
 $('#enterBtn').onclick = () => {
   const err = validNick(); if (err) { toast(err); $('#nick').focus(); $('#nickHint').style.color = 'var(--red)'; return; }
-  prof.nick = $('#nick').value.trim(); save(true); audioInit(); startPlay();
+  prof.nick = $('#nick').value.trim(); save(true); audioInit(); if (isTouch) goLandscape(); startPlay();
 };
-$('#watchBtn').onclick = () => { audioInit(); startWatch(); };
+$('#watchBtn').onclick = () => { audioInit(); if (isTouch) goLandscape(); startWatch(); };
+
+/* ================= TELA CHEIA / HORIZONTAL ================= */
+const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+function enterFullscreen() { const d = document.documentElement, rq = d.requestFullscreen || d.webkitRequestFullscreen; return rq ? Promise.resolve(rq.call(d, {navigationUI:'hide'})).catch(() => {}) : Promise.resolve(); }
+function toggleFullscreen() {
+  if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) return toast('Seu navegador não permite tela cheia aqui. No iPhone, use "Adicionar à Tela de Início".');
+  enterFullscreen();
+}
+// No celular: tela cheia + trava na horizontal (Android/Chrome). No iPhone a trava não existe; o aviso pede para girar.
+async function goLandscape() { await enterFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) {} checkOrient(); }
+function checkOrient() { $('#rotate').classList.toggle('hidden', !(isTouch && G.mode !== 'lobby' && innerHeight > innerWidth)); }
+function onFsChange() { const on = !!fsEl(); $$('.fsTxt').forEach(s => s.textContent = on ? 'Sair da tela cheia' : 'Tela cheia'); }
+document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
+addEventListener('resize', checkOrient); addEventListener('orientationchange', () => setTimeout(checkOrient, 200));
+$('#rotBtn').onclick = goLandscape;
 
 /* ================= MODOS ================= */
 function startPlay() {
@@ -2055,16 +2091,17 @@ function startPlay() {
   if (isTouch) { $('#joy').classList.remove('hidden'); $('#jumpBtn').classList.remove('hidden'); }
   pushChat({kind:'sys', text:`Você entrou na ${world.def.name} como ${prof.nick}. Seja gentil 💛`});
   $('#infoSub').textContent = 'Jogando como ' + prof.nick; canvas.focus(); updateMissionCard();
-  netHello();
+  netHello(); checkOrient();
 }
 function startWatch() {
   G.mode = 'watch'; $('#lobby').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#bar').classList.add('hidden'); $('#ctrlHint').classList.add('hidden');
   $('#chatIn').disabled = true; $('#chatIn').placeholder = 'Entre no jogo para conversar';
   cam.aTarget.set(world.lobbyCam.x, 0, world.lobbyCam.z); cam.aH = 90;
   pushChat({kind:'sys', text:'Você está assistindo do alto. Arraste para mover, roda do mouse para zoom, Q para girar.'});
-  netSend({t:'map', map:prof.map});
+  netSend({t:'map', map:prof.map}); checkOrient();
 }
 function toLobby() {
+  setTimeout(checkOrient);
   netSend({t:'leave'});
   if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden'); $('#hp').classList.add('hidden');
   G.mode = 'lobby'; G.aerial = false; G.sprayMode = false; closePop(); $('#hud').classList.add('hidden'); $('#lobby').classList.remove('hidden'); $('#joy').classList.add('hidden'); $('#jumpBtn').classList.add('hidden');
@@ -2121,7 +2158,7 @@ document.addEventListener('click', e => {
   if (a === 'anunciar') openAd();
   if (a === 'ajuda') openHelp();
   if (a === 'config') openSettings();
-  if (a === 'fullscreen') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}); }
+  if (a === 'fullscreen') toggleFullscreen();
   if (a === 'sair') toLobby();
   if (a === 'corrida') openRace();
   if (a === 'racejoin') raceJoin();
@@ -2523,7 +2560,7 @@ function init() {
   const lc = world.lobbyCam; camera.position.set(lc.x + 60, lc.h*.75, lc.z + 60); camera.lookAt(lc.x, 0, lc.z);
   for (let i = 0; i < 6; i++) botChatter();
   drawTeloes(); $('#loading').remove(); requestAnimationFrame(frame);
-  if (innerWidth < 800) { $('#chatBody').classList.add('hidden'); $('#chatMin').textContent = '+'; }
+  if (innerWidth < 800 || isTouch) { $('#chatBody').classList.add('hidden'); $('#chatMin').textContent = '+'; }
 }init();
 </script>
 </body>
