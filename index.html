@@ -194,9 +194,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
   #joy{left:max(16px,env(safe-area-inset-left))}#jumpBtn{right:max(20px,env(safe-area-inset-right))}
   #bar{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 }
-#rotate{position:fixed;inset:0;z-index:95;background:#121a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
-#rotate .ic{font-size:64px;animation:rot 1.6s ease-in-out infinite}
-@keyframes rot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
 </style>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
 </head>
@@ -312,7 +309,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 <div id="botCard" class="panel hidden"></div>
 <div id="joy" class="hidden"><i></i></div><button id="jumpBtn" class="hidden">PULAR</button>
 <div id="toast"></div>
-<div id="rotate" class="hidden"><div class="ic">📱</div><b style="font-size:20px">Gire o celular</b><p class="mut">A avenida é na horizontal. Deite o celular para jogar.</p></div>
 <div id="modalWrap" class="hidden"><div id="modal"></div></div>
 
 <script type="module">
@@ -2286,10 +2282,8 @@ function toggleFullscreen() {
   if (!rq) return toast('Seu navegador não permite tela cheia aqui.');
   Promise.resolve(rq.call(d)).catch(() => {});
 }
-function checkOrient() { $('#rotate').classList.toggle('hidden', !(isTouch && G.mode !== 'lobby' && innerHeight > innerWidth)); }
 function onFsChange() { const on = !!fsEl(); $$('.fsTxt').forEach(s => s.textContent = on ? 'Sair da tela cheia' : 'Tela cheia'); }
 document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
-addEventListener('resize', checkOrient); addEventListener('orientationchange', () => setTimeout(checkOrient, 200));
 // Sem zoom no celular: bloqueia pinça (iPhone) e toque duplo (o resto vem do viewport e do touch-action no CSS).
 document.addEventListener('gesturestart', e => e.preventDefault()); document.addEventListener('gesturechange', e => e.preventDefault());
 document.addEventListener('dblclick', e => { if (isTouch) e.preventDefault(); }, {passive:false});
@@ -2302,17 +2296,16 @@ function startPlay() {
   if (isTouch) { $('#joy').classList.remove('hidden'); $('#jumpBtn').classList.remove('hidden'); }
   pushChat({kind:'sys', text:`Você entrou na ${world.def.name} como ${prof.nick}. Seja gentil 💛`});
   $('#infoSub').textContent = 'Jogando como ' + prof.nick; canvas.focus(); updateMissionCard();
-  netHello(); checkOrient();
+  netHello();
 }
 function startWatch() {
   G.mode = 'watch'; $('#lobby').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#bar').classList.add('hidden'); $('#ctrlHint').classList.add('hidden');
   $('#chatIn').disabled = true; $('#chatIn').placeholder = 'Entre no jogo para conversar';
   cam.aTarget.set(world.lobbyCam.x, 0, world.lobbyCam.z); cam.aH = 90;
   pushChat({kind:'sys', text:'Você está assistindo do alto. Arraste para mover, roda do mouse para zoom, Q para girar.'});
-  netSend({t:'map', map:prof.map}); checkOrient();
+  netSend({t:'map', map:prof.map});
 }
 function toLobby() {
-  setTimeout(checkOrient);
   P.dead = false; $('#death').classList.add('hidden'); $('#death').dataset.k = '';
   netSend({t:'leave'});
   if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden'); $('#hp').classList.add('hidden');
