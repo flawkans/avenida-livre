@@ -212,6 +212,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="pill" data-act="mapas">Mapas</button>
     <button class="pill green hide-m" data-act="anunciar">📺 Anunciar no jogo</button>
     <button class="pill fsBtn" data-act="fullscreen" title="Tela cheia (F11)">⛶ <span class="hide-m fsTxt">Tela cheia</span></button>
+    <button class="pill accBtn hidden" data-act="conta">👤</button>
     <button class="iconbtn" data-act="config" title="Configurações">⚙</button>
     <button class="iconbtn" data-act="ajuda" title="Ajuda">?</button>
   </header>
@@ -268,6 +269,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="pill fsBtn" data-act="fullscreen" title="Tela cheia (F11)">⛶ <span class="hide-m fsTxt">Tela cheia</span></button>
     <button class="iconbtn" data-act="config" title="Configurações">⚙</button>
     <button class="iconbtn" data-act="ajuda" title="Ajuda">?</button>
+    <button class="pill accBtn hidden" data-act="conta">👤</button>
     <button class="pill" data-act="sair">Sair</button>
   </div>
   <div class="info panel"><b><span class="live"></span><span id="mapName">AVENIDA PAULISTA</span></b><small id="infoSub">—</small></div>
@@ -524,7 +526,7 @@ function fixLook() {
 }
 fixLook();
 let saveT = 0;
-function save(now) { if (!now) { clearTimeout(saveT); saveT = setTimeout(() => save(true), 400); return; } try { localStorage.setItem('avenida_livre', JSON.stringify(prof)); } catch(e) {} }
+function save(now) { if (!now) { clearTimeout(saveT); saveT = setTimeout(() => save(true), 400); return; } try { localStorage.setItem('avenida_livre', JSON.stringify(prof)); } catch(e) {} if (typeof saveCloud === 'function') saveCloud(); }
 
 const hasPass = id => !!(prof.passes.total || prof.passes[id]);
 function owns(kind, it) {
@@ -541,6 +543,126 @@ function requireItem(kind, it, cb) {
   const via = kind === 'veh' ? (it.prem ? 'Também liberado pelo Premium e pelos passes Garagem e Total.' : 'Também incluso nos passes Garagem & Objetos e Total.') : kind === 'char' ? 'Fica na sua conta para sempre, em qualquer time. Também incluso nos passes Personagens e Total.' : 'Também incluso no Passe Total.';
   if (kind === 'veh' && it.prem && !it.price) return buyPass('premium', cb, `${it.name} faz parte do Premium.`);
   buyModal({name:it.name, price:it.price, desc:via, apply:() => { prof.owned[kind + ':' + it.id] = 1; }, alt:kind === 'veh' && it.prem ? 'premium' : null}, cb);
+}
+
+/* ================= CONTA (Supabase) =================
+   URL e chave "anon/publishable" do projeto Supabase. Elas são públicas: quem protege os dados são as regras (RLS) das tabelas.
+   Sem preencher, o jogo roda sem login (bom para testar no PC). */
+const SUPABASE_URL = 'https://zaluvwahhzqnvpuaapua.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zGNk6rop0MNTnpxzVPgjtA_mPXcAotA';
+const LOGIN_REQUIRED = true;   // igual ao original: sem conta só dá para assistir do alto
+const AUTH = {sb:null, user:null, session:null, after:null, cloudT:0};
+const loginOn = () => !!AUTH.sb;
+const needAccount = () => loginOn() && LOGIN_REQUIRED && !AUTH.user;
+const CLOUD_KEYS = ['team', 'look', 'held', 'cartazes', 'missions', 'done', 'spray', 'flagText', 'settings', 'best', 'map', 'kos', 'sprayLeft', 'owned', 'passes', 'premium'];
+async function initAuth() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return renderAccount();
+  try { const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm'); AUTH.sb = createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}}); }
+  catch (e) { console.warn('Login indisponível:', e); return renderAccount(); }
+  const { data } = await AUTH.sb.auth.getSession(); await onSession(data.session);
+  AUTH.sb.auth.onAuthStateChange((ev, s) => { if (ev === 'PASSWORD_RECOVERY') return openNewPassword(); setTimeout(() => onSession(s)); });
+  renderAccount();
+}
+async function onSession(s) {
+  const before = AUTH.user && AUTH.user.id; AUTH.session = s || null; AUTH.user = s ? s.user : null;
+  if (AUTH.user && AUTH.user.id !== before) await loadCloud();
+  if (!AUTH.user && before && G.mode === 'play') toLobby();
+  renderAccount();
+}
+async function loadCloud() {
+  const sb = AUTH.sb, id = AUTH.user.id;
+  const [p, e] = await Promise.all([sb.from('profiles').select('nick,data').eq('id', id).maybeSingle(), sb.from('entitlements').select('premium,passes,owned').eq('user_id', id).maybeSingle()]);
+  if (p.data) { const d = p.data.data || {}; if (Object.keys(d).length) for (const k of CLOUD_KEYS) if (d[k] !== undefined) prof[k] = d[k]; prof.nick = p.data.nick; }
+  if (e.data) { prof.premium = prof.premium || e.data.premium; prof.passes = Object.assign({}, prof.passes, e.data.passes); prof.owned = Object.assign({}, prof.owned, e.data.owned); }
+  prof.look = Object.assign({}, DEF.look, prof.look); prof.settings = Object.assign({}, DEF.settings, prof.settings); fixLook();
+  save(true); saveCloud(true);
+  $('#nick').value = prof.nick; refreshAllUI(); refreshPreview(); if (P.c) rebuildPlayer();
+}
+function saveCloud(now) {
+  if (!AUTH.user) return; clearTimeout(AUTH.cloudT);
+  const go = () => { const data = {}; for (const k of CLOUD_KEYS) data[k] = prof[k]; AUTH.sb.from('profiles').update({data, updated_at:new Date().toISOString()}).eq('id', AUTH.user.id).then(({error}) => error && console.warn('Falha ao salvar na nuvem:', error.message)); };
+  if (now) go(); else AUTH.cloudT = setTimeout(go, 2500);
+}
+function authMsg(e) {
+  const m = (e && e.message) || '';
+  if (/Invalid login/i.test(m)) return 'E-mail ou senha errados.';
+  if (/already registered|already been registered|already exists/i.test(m)) return 'Esse e-mail já tem conta. Use "Entrar".';
+  if (/Database error|duplicate|unique/i.test(m)) return 'Esse apelido já está em uso. Escolha outro.';
+  if (/rate limit|too many/i.test(m)) return 'Muitas tentativas. Espere um pouco e tente de novo.';
+  if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos e depois entre.';
+  if (/Password should be/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  return m || 'Não deu certo. Tente de novo.';
+}
+function openAuth(mode = 'entrar', why) {
+  if (!loginOn()) return toast('O login ainda não está configurado neste servidor.');
+  const criar = mode === 'criar';
+  openModal(`<div class="kicker">${why ? 'Último passo' : 'Sua conta'}</div><h3>${criar ? 'Criar conta' : 'Entrar'}</h3>${why ? `<p class="mut" style="font-size:13px">${esc(why)}</p>` : ''}
+  <div class="tabs" style="margin:12px 0 4px;padding:0"><button class="${criar ? '' : 'on'}" data-am="entrar">Entrar</button><button class="${criar ? 'on' : ''}" data-am="criar">Criar conta</button></div>
+  ${criar ? `<div class="sec"><h4>Apelido · como te chamam na avenida (2 a 16)</h4><input id="auNick" maxlength="16" value="${esc(prof.nick || '')}" autocomplete="nickname"></div>` : ''}
+  <div class="sec"><h4>E-mail</h4><input id="auMail" type="email" autocomplete="email" inputmode="email"></div>
+  <div class="sec"><h4>Senha${criar ? ' (mínimo 6 caracteres)' : ''}</h4><input id="auPass" type="password" autocomplete="${criar ? 'new-password' : 'current-password'}"></div>
+  <div id="auErr" style="color:var(--red);font-size:12.5px;min-height:18px;margin-top:8px"></div>
+  <button class="btn gold" style="width:100%" id="auGo">${criar ? 'Criar conta e jogar' : 'Entrar'}</button>
+  ${criar ? '' : '<button class="btn ghost small" style="width:100%;margin-top:6px" id="auForgot">Esqueci a senha</button>'}
+  <button class="btn ghost small" style="width:100%;margin-top:4px" id="auWatch">Só quero assistir</button>
+  <p class="mut" style="font-size:11.5px;margin-top:8px">Seu e-mail não aparece no jogo nem no chat.</p>`);
+  $$('[data-am]').forEach(b => b.onclick = () => openAuth(b.dataset.am, why));
+  $('#auWatch').onclick = () => { closeModal(); AUTH.after = null; $('#watchBtn').click(); };
+  const err = m => { $('#auErr').textContent = m; }, go = $('#auGo');
+  const submit = async () => {
+    const email = $('#auMail').value.trim(), pass = $('#auPass').value;
+    if (!/^\S+@\S+\.\S+$/.test(email)) return err('E-mail inválido.');
+    if (pass.length < 6) return err('A senha precisa ter pelo menos 6 caracteres.');
+    go.disabled = true; go.textContent = 'Aguarde…'; err('');
+    try {
+      if (criar) {
+        const nick = $('#auNick').value.trim(), bad = nickError(nick); if (bad) throw new Error(bad);
+        const free = await AUTH.sb.rpc('nick_disponivel', {n:nick}); if (free.data === false) throw new Error('Esse apelido já está em uso. Escolha outro.');
+        const { data, error } = await AUTH.sb.auth.signUp({email, password:pass, options:{data:{nick}}}); if (error) throw error;
+        if (!data.session) { closeModal(); return toast('Conta criada! Abra o link que mandamos no seu e-mail e depois entre.'); }
+        prof.nick = nick;
+      } else { const { error } = await AUTH.sb.auth.signInWithPassword({email, password:pass}); if (error) throw error; }
+      const s = (await AUTH.sb.auth.getSession()).data.session; await onSession(s);
+      closeModal(); toast(`Bem-vindo(a), ${prof.nick}! 👋`); const f = AUTH.after; AUTH.after = null; f && f();
+    } catch (e) { err(authMsg(e)); go.disabled = false; go.textContent = criar ? 'Criar conta e jogar' : 'Entrar'; }
+  };
+  go.onclick = submit; $('#auPass').onkeydown = e => { if (e.key === 'Enter') submit(); };
+  const fg = $('#auForgot'); if (fg) fg.onclick = async () => {
+    const email = $('#auMail').value.trim(); if (!/^\S+@\S+\.\S+$/.test(email)) return err('Digite seu e-mail acima e toque de novo em "Esqueci a senha".');
+    const { error } = await AUTH.sb.auth.resetPasswordForEmail(email, {redirectTo:location.origin + '/'}); if (error) return err(authMsg(error));
+    closeModal(); toast('Se esse e-mail tiver conta, mandamos um link para criar uma nova senha.');
+  };
+}
+function openNewPassword() {
+  openModal(`<div class="kicker">Sua conta</div><h3>Nova senha</h3><div class="sec"><input id="npPass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></div><div id="npErr" style="color:var(--red);font-size:12.5px;min-height:18px;margin-top:8px"></div><button class="btn gold" style="width:100%" id="npGo">Salvar nova senha</button>`);
+  $('#npGo').onclick = async () => { const p = $('#npPass').value; if (p.length < 6) return $('#npErr').textContent = 'Mínimo 6 caracteres.'; const { error } = await AUTH.sb.auth.updateUser({password:p}); if (error) return $('#npErr').textContent = authMsg(error); closeModal(); toast('Senha alterada ✓'); };
+}
+function openAccount() {
+  if (!loginOn()) return toast('O login ainda não está configurado neste servidor.');
+  if (!AUTH.user) return openAuth('entrar');
+  openModal(`<div class="kicker">Sua conta</div><h3>${esc(prof.nick)} <span style="color:var(--green);font-size:16px">✓</span></h3><p class="mut" style="font-size:13px">${esc(AUTH.user.email || '')}</p>
+  <p class="mut" style="font-size:12.5px;margin-top:8px">Seu time, visual, cartazes, missões e compras ficam salvos nesta conta. Entre de qualquer celular ou PC.</p>
+  <div class="sec"><h4>Trocar apelido</h4><div style="display:flex;gap:6px"><input id="acNick" maxlength="16" value="${esc(prof.nick)}"><button class="btn small" id="acNickGo">Trocar</button></div></div>
+  <button class="btn red" style="width:100%;margin-top:16px" id="acOut">Sair da conta</button>`);
+  $('#acNickGo').onclick = () => changeNick($('#acNick').value.trim());
+  $('#acOut').onclick = async () => { closeModal(); await AUTH.sb.auth.signOut(); prof.nick = ''; $('#nick').value = ''; renderAccount(); toast('Você saiu da conta.'); };
+}
+async function changeNick(n) {
+  const bad = nickError(n); if (bad) return toast(bad);
+  if (AUTH.user) {
+    const free = await AUTH.sb.rpc('nick_disponivel', {n}); if (free.data === false && n.toLowerCase() !== (prof.nick || '').toLowerCase()) return toast('Esse apelido já está em uso.');
+    const { error } = await AUTH.sb.from('profiles').update({nick:n}).eq('id', AUTH.user.id); if (error) return toast(authMsg(error));
+  }
+  prof.nick = n; P.nick = n; $('#nick').value = n; save();
+  if (P.c) { rebuildPlayer(); netHello(true); }
+  closeModal(); toast('Apelido trocado ✓'); renderAccount();
+}
+function renderAccount() {
+  const on = loginOn(), u = AUTH.user;
+  $$('.accBtn').forEach(b => { b.classList.toggle('hidden', !on); b.innerHTML = u ? `👤 <span class="hide-m">${esc(prof.nick || 'Conta')}</span>` : '👤 <span class="hide-m">Entrar</span>'; });
+  const n = $('#nick'); if (n) { n.disabled = !!u; n.title = u ? 'Para trocar, abra a sua conta (👤)' : ''; }
+  const h = $('#nickHint'); if (h) h.textContent = u ? `Conectado como ${prof.nick}. Para trocar o apelido, toque em 👤.` : (on && LOGIN_REQUIRED ? 'Para jogar e conversar, entre com a sua conta (é grátis). Sem conta, você pode assistir do alto.' : 'De 2 a 16 caracteres, com espaços. Pode usar @. Sem e-mail nem telefone.');
+  const eb = $('#enterBtn'); if (eb) eb.textContent = needAccount() ? 'Entrar na conta →' : 'Entrar →';
 }
 
 /* ================= RENDER BASE ================= */
@@ -2075,8 +2197,10 @@ function openCharShop(cat = 'todos', q = '') {
 }
 $('#nick').value = prof.nick;
 $('#nick').addEventListener('input', () => { prof.nick = $('#nick').value; save(); });
-function validNick() { const n = $('#nick').value.trim(); if (n.length < 2 || n.length > 16) return 'Seu apelido precisa ter de 2 a 16 caracteres.'; if (/\S+@\S+\.\S+/.test(n) || /\d{8,}/.test(n.replace(/\D/g, ''))) return 'Sem e-mail nem telefone no apelido.'; if (filterBad(n) !== n) return 'Escolha um apelido sem palavrões.'; return null; }
+function nickError(n) { n = String(n || '').trim(); if (n.length < 2 || n.length > 16) return 'Seu apelido precisa ter de 2 a 16 caracteres.'; if (/\S+@\S+\.\S+/.test(n) || /\d{8,}/.test(n.replace(/\D/g, ''))) return 'Sem e-mail nem telefone no apelido.'; if (filterBad(n) !== n) return 'Escolha um apelido sem palavrões.'; return null; }
+const validNick = () => nickError($('#nick').value);
 $('#enterBtn').onclick = () => {
+  if (needAccount()) { AUTH.after = () => $('#enterBtn').click(); return openAuth('entrar', 'Entre pra jogar e falar no chat. É grátis e leva poucos segundos. Sem conta, você pode assistir do alto.'); }
   const err = validNick(); if (err) { toast(err); $('#nick').focus(); $('#nickHint').style.color = 'var(--red)'; return; }
   prof.nick = $('#nick').value.trim(); save(true); audioInit(); if (isTouch) goLandscape(); startPlay();
 };
@@ -2198,7 +2322,8 @@ document.addEventListener('click', e => {
   if (a === 'crush') openCrush();
   if (a === 'spraynow') sprayFront();
   if (a === 'pvptoggle') togglePvp();
-  if (a === 'savenick') { const n = $('#pNick').value.trim(); if (n.length < 2 || filterBad(n) !== n) return toast('Apelido inválido.'); prof.nick = n; P.nick = n; $('#nick').value = n; save(); rebuildPlayer(); $('#infoSub').textContent = 'Jogando como ' + n; toast('Apelido trocado ✓'); }
+  if (a === 'savenick') changeNick($('#pNick').value.trim());
+  if (a === 'conta') openAccount();
 });
 $('#sndBtn').onclick = () => { audioInit(); prof.settings.sound = !prof.settings.sound; $('#sndBtn').textContent = prof.settings.sound ? '🔊' : '🔇'; save(); };
 $('#scBtn').onclick = () => openSuperchat();
@@ -2463,7 +2588,7 @@ function netConnect() {
 }
 function netSend(o) { if (NET.on && NET.ws && NET.ws.readyState === 1) NET.ws.send(JSON.stringify(o)); }
 function netProfile() { return {nick:prof.nick, team:prof.team, look:prof.look, held:P.pvp ? {type:'obj', id:'taco'} : prof.held, prem:!!prof.premium, map:prof.map}; }
-function netHello() { if (G.mode === 'play') netSend(Object.assign({t:'hello', x:P.pos.x, z:P.pos.z, h:P.h}, netProfile())); }
+function netHello(fresh) { if (G.mode === 'play') netSend(Object.assign({t:'hello', x:P.pos.x, z:P.pos.z, h:P.h, token:AUTH.session ? AUTH.session.access_token : null, fresh:fresh ? 1 : 0}, netProfile())); }
 let netLookT = 0;
 function netLook() { clearTimeout(netLookT); netLookT = setTimeout(() => { if (G.mode === 'play') netSend(Object.assign({t:'look'}, netProfile())); }, 300); }
 function netTick(dt) {
@@ -2489,6 +2614,8 @@ function netHandle(m) {
     case 'adOk': toast('Anúncio no ar nos telões 📺'); break;
     case 'adFail': toast(m.msg || 'Não foi possível publicar o anúncio.'); break;
     case 'full': toast('Este mapa está lotado no momento. Tente outro mapa.'); break;
+    case 'needLogin': toLobby(); AUTH.after = () => $('#enterBtn').click(); openAuth('entrar', m.msg || 'Sua sessão expirou. Entre de novo para jogar.'); break;
+    case 'kicked': toLobby(); toast(m.msg || 'Você entrou com esta conta em outro lugar.'); break;
   }
 }
 function safeHeld(h) {
@@ -2586,7 +2713,7 @@ function uiTick() {
 function init() {
   applyQuality(); onResize(); applyChatH();
   $('#sndBtn').textContent = prof.settings.sound ? '🔊' : '🔇';
-  loadMap(prof.map); spawnBots(); netConnect();
+  loadMap(prof.map); spawnBots(); netConnect(); initAuth();
   makeThumbs(); renderTeams(); renderChars(); renderCustom($('#lobbyCustom')); refreshPreview();
   const lc = world.lobbyCam; camera.position.set(lc.x + 60, lc.h*.75, lc.z + 60); camera.lookAt(lc.x, 0, lc.z);
   for (let i = 0; i < 6; i++) botChatter();

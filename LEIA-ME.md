@@ -88,6 +88,14 @@ Ele mostra um link `https://....trycloudflare.com` para mandar aos amigos. O lin
 - Denúncias feitas pelo cartão de um jogador real ficam salvas em `denuncias.log` no servidor.
 - Limite: 300 jogadores por mapa (dá para mudar em `MAX_PER_ROOM` no `server.py`).
 
+## Login (Supabase)
+
+- O projeto Supabase é o **avenida-livre** (`zaluvwahhzqnvpuaapua.supabase.co`). As tabelas foram criadas com o `supabase.sql`.
+- A URL e a chave pública ficam no topo do `<script>` do `index.html` (`SUPABASE_URL`, `SUPABASE_KEY`) e no `render.yaml` (para o servidor conferir as contas).
+- `LOGIN_REQUIRED = true`: sem conta só dá para assistir do alto. Mude para `false` se quiser deixar jogar sem conta.
+- "Confirm email" está **desligado** no Supabase (Authentication > Sign In / Providers), porque o e-mail grátis do Supabase só chega para a equipe do projeto. Para ligar a confirmação, configure antes um SMTP (Resend ou Brevo têm plano grátis) em Authentication > Emails.
+- Contas e perfis: Supabase > Authentication > Users e Table Editor > `profiles`.
+
 ## Anúncios e o disco do servidor
 
 Os anúncios ficam na pasta `ads/` do servidor (imagens + `ads.json`). No plano grátis do Render o disco é apagado sempre que o servidor reinicia ou recebe uma atualização, então **os anúncios somem**. Para vender anúncios de verdade, use um plano pago com **Persistent Disk** montado em `ads/`, ou um banco de dados. Não suba a pasta `ads/` para o GitHub.

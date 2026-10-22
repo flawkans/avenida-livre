@@ -15,6 +15,9 @@ import re
 import struct
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 PORT = int(os.environ.get('PORT') or (sys.argv[1] if len(sys.argv) > 1 else 8080))
@@ -48,9 +51,51 @@ AD_PROTECT_S = 2 * 3600
 AD_LIFETIME_S = 20 * 24 * 3600
 AD_IMG_MAX = 700 * 1024
 
+# Login (Supabase): com SUPABASE_URL e SUPABASE_ANON_KEY definidos, só joga e conversa quem tem conta.
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '').rstrip('/')
+SUPABASE_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
+AUTH_ON = bool(SUPABASE_URL and SUPABASE_KEY)
+_auth_cache = {}   # token -> (validade, user_id, nick)
+
 conns = set()
 _next_id = 1
 ads = []
+
+
+def _supabase_get(path, token):
+    req = urllib.request.Request(SUPABASE_URL + path, headers={'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token})
+    with urllib.request.urlopen(req, timeout=8) as r:
+        return json.loads(r.read().decode('utf-8'))
+
+
+def _verify_blocking(token):
+    user = _supabase_get('/auth/v1/user', token)
+    uid = user.get('id')
+    if not uid:
+        return None
+    rows = _supabase_get('/rest/v1/profiles?select=nick&id=eq.' + urllib.parse.quote(uid), token)
+    nick = rows[0]['nick'] if rows else None
+    return uid, nick
+
+
+async def verify_token(token, fresh=False):
+    """Confere o token do jogador no Supabase. Devolve (user_id, apelido) ou None."""
+    if not AUTH_ON or not isinstance(token, str) or len(token) > 4096:
+        return None
+    now = time.time()
+    hit = _auth_cache.get(token)
+    if hit and hit[0] > now and not fresh:
+        return hit[1], hit[2]
+    try:
+        res = await asyncio.to_thread(_verify_blocking, token)
+    except (urllib.error.URLError, ValueError, OSError, KeyError, IndexError):
+        res = None
+    if res and res[1]:
+        if len(_auth_cache) > 5000:
+            _auth_cache.clear()
+        _auth_cache[token] = (now + 300, res[0], res[1])
+        return res
+    return None
 
 
 def load_ads():
@@ -139,6 +184,8 @@ class Conn:
         self.chat_tokens = 4.0
         self.spray_t = 0.0
         self.hit_t = 0.0
+        self.uid = None         # id da conta (Supabase), quando o login está ligado
+        self.auth_nick = None   # apelido da conta: o cliente não consegue trocar por mensagem
 
     def send(self, obj):
         if not self.alive:
@@ -214,7 +261,7 @@ def counts():
 def apply_profile(c, m):
     old = c.p or {}
     c.p = {
-        'nick': clean_text(m.get('nick'), 16) or 'Anônimo',
+        'nick': c.auth_nick or clean_text(m.get('nick'), 16) or 'Anônimo',
         'team': m.get('team') if m.get('team') in TEAMS else 'va',
         'look': clean_look(m.get('look')),
         'held': clean_held(m.get('held')),
@@ -320,6 +367,8 @@ def handle(c, m):
 
 
 def handle_ad(c, m):
+    if AUTH_ON and not c.uid:
+        return c.send({'t': 'adFail', 'msg': 'Entre na sua conta para anunciar.'})
     screen = m.get('screen')
     if not isinstance(screen, str) or not re.fullmatch(r'[a-z0-9-]{1,40}', screen):
         return c.send({'t': 'adFail', 'msg': 'Telão inválido.'})
@@ -401,6 +450,17 @@ async def ws_session(reader, writer, headers):
                     m = None
                 buf = b''
                 if isinstance(m, dict):
+                    if m.get('t') == 'hello' and AUTH_ON:
+                        auth = await verify_token(m.get('token'), bool(m.get('fresh')))
+                        if not auth:
+                            c.send({'t': 'needLogin', 'msg': 'Entre na sua conta para jogar e conversar. Sem conta, você pode assistir do alto.'})
+                            continue
+                        c.uid, c.auth_nick = auth
+                        for o in list(conns):   # a mesma conta em outra aba/aparelho sai da avenida
+                            if o is not c and o.uid == c.uid and o.p:
+                                broadcast(o.room, {'t': 'leave', 'id': o.id}, exclude=o)
+                                o.p = None
+                                o.send({'t': 'kicked', 'msg': 'Você entrou com esta conta em outro lugar.'})
                     handle(c, m)
     except (asyncio.IncompleteReadError, ConnectionError, ValueError, OSError):
         pass

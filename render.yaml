@@ -9,3 +9,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.7
+      # login: o servidor confere a conta de cada jogador (valores públicos, os mesmos do index.html)
+      - key: SUPABASE_URL
+        value: https://zaluvwahhzqnvpuaapua.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_zGNk6rop0MNTnpxzVPgjtA_mPXcAotA
