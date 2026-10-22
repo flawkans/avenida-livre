@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14201a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Avenida Livre">
 <title>Avenida Livre · manifestação online</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -176,6 +183,14 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
   #hp,#raceHud{top:44px}#listen{top:44px;left:auto;right:185px;width:260px;max-height:calc(100vh - 60px)}
   #modal{max-height:calc(100vh - 16px);padding:16px}
   .lgrid{grid-template-columns:1fr 1fr}.pvwrap{height:300px}.chooser{max-height:none;min-height:0}.display{font-size:30px}
+}
+/* aberto pelo ícone da Tela de Início: já está em tela cheia; respeita o entalhe/câmera do iPhone deitado */
+.standalone .fsBtn{display:none!important}
+@supports (padding:env(safe-area-inset-left)){
+  .htop{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-top:max(10px,env(safe-area-inset-top))}
+  .info,#mini{left:max(14px,env(safe-area-inset-left))}.rcol,#chat{right:max(14px,env(safe-area-inset-right))}
+  #joy{left:max(16px,env(safe-area-inset-left))}#jumpBtn{right:max(20px,env(safe-area-inset-right))}
+  #bar{padding-bottom:max(8px,env(safe-area-inset-bottom))}
 }
 #rotate{position:fixed;inset:0;z-index:95;background:#121a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
 #rotate .ic{font-size:64px;animation:rot 1.6s ease-in-out infinite}
@@ -2070,18 +2085,34 @@ $('#watchBtn').onclick = () => { audioInit(); if (isTouch) goLandscape(); startW
 /* ================= TELA CHEIA / HORIZONTAL ================= */
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
 function enterFullscreen() { const d = document.documentElement, rq = d.requestFullscreen || d.webkitRequestFullscreen; return rq ? Promise.resolve(rq.call(d, {navigationUI:'hide'})).catch(() => {}) : Promise.resolve(); }
+// iPhone não permite tela cheia em sites: o caminho é instalar na Tela de Início (abre sem as barras do navegador).
+const isIPhone = /iPhone|iPod/.test(navigator.userAgent);
+const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
+function showInstallHelp() {
+  openModal(`<div class="kicker">iPhone · tela cheia</div><h3>Jogue em tela cheia</h3>
+  <p class="mut">O iPhone não deixa sites ficarem em tela cheia. Instale a Avenida Livre na Tela de Início: ela abre como um app, sem as barras do navegador.</p>
+  <div class="list">
+    <div class="li"><div><b>1. Abra no Safari</b><small>Se estiver em outro navegador, copie o link e abra no Safari.</small></div></div>
+    <div class="li"><div><b>2. Toque em Compartilhar</b><small>O quadrado com a seta para cima (□↑), na barra do Safari.</small></div></div>
+    <div class="li"><div><b>3. "Adicionar à Tela de Início"</b><small>Role a lista para baixo se não aparecer de cara, e toque em Adicionar.</small></div></div>
+    <div class="li"><div><b>4. Abra pelo ícone</b><small>Deite o celular e jogue em tela cheia.</small></div></div>
+  </div><button class="btn gold" style="width:100%;margin-top:14px" data-close>Entendi</button>`);
+}
 function toggleFullscreen() {
   if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
-  if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) return toast('Seu navegador não permite tela cheia aqui. No iPhone, use "Adicionar à Tela de Início".');
+  if (isIPhone && !isStandalone()) return showInstallHelp();
+  if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) return toast('Seu navegador não permite tela cheia aqui.');
   enterFullscreen();
 }
 // No celular: tela cheia + trava na horizontal (Android/Chrome). No iPhone a trava não existe; o aviso pede para girar.
-async function goLandscape() { await enterFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) {} checkOrient(); }
+async function goLandscape() { if (!isIPhone) await enterFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) {} checkOrient(); }
+if (isStandalone()) document.documentElement.classList.add('standalone');
 function checkOrient() { $('#rotate').classList.toggle('hidden', !(isTouch && G.mode !== 'lobby' && innerHeight > innerWidth)); }
 function onFsChange() { const on = !!fsEl(); $$('.fsTxt').forEach(s => s.textContent = on ? 'Sair da tela cheia' : 'Tela cheia'); }
 document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 addEventListener('resize', checkOrient); addEventListener('orientationchange', () => setTimeout(checkOrient, 200));
-$('#rotBtn').onclick = goLandscape;
+$('#rotBtn').onclick = () => isIPhone && !isStandalone() ? showInstallHelp() : goLandscape();
+if (isIPhone) $('#rotBtn').textContent = 'Como jogar em tela cheia';
 
 /* ================= MODOS ================= */
 function startPlay() {
