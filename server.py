@@ -510,6 +510,11 @@ async def on_client(reader, writer):
         if path == '/ws' and headers.get('upgrade', '').lower() == 'websocket':
             await ws_session(reader, writer, headers)
             return
+        if path == '/api/status':   # diagnóstico: o login está ligado neste servidor?
+            body = json.dumps({'login': AUTH_ON, 'supabase': SUPABASE_URL or None, 'players': sum(1 for c in conns if c.p)}).encode()
+            writer.write(b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nCache-Control: no-store\r\nContent-Length: %d\r\nConnection: close\r\n\r\n' % len(body) + body)
+            await writer.drain()
+            return
         if method in ('GET', 'HEAD'):
             await serve_static(writer, method, path)
         await writer.drain()
@@ -552,6 +557,7 @@ async def main():
     server = await asyncio.start_server(on_client, HOST, PORT)
     asyncio.create_task(tick_loop())
     print(f'Avenida Livre rodando em http://localhost:{PORT}  (Ctrl+C para parar)', flush=True)
+    print('Login (Supabase): ' + ('LIGADO · ' + SUPABASE_URL if AUTH_ON else 'desligado (faltam SUPABASE_URL e SUPABASE_ANON_KEY)'), flush=True)
     async with server:
         await server.serve_forever()
 
