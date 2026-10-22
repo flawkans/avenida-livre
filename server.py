@@ -66,8 +66,7 @@ CAKTO_PRODUCT_ID = os.environ.get('CAKTO_PRODUCT_ID', '')            # opcional:
 WEAPONS = {'soco': (10, 1.9, .45, False), 'bastao': (25, 2.5, .6, True), 'espada': (32, 2.9, .7, True),
            'pistola': (18, 32, .35, True), 'paintball': (14, 32, .3, True)}
 MAX_HP = 100
-RESPAWN_FREE_S = 300          # sem Premium: espera 5 min para reviver
-_deaths = {}                  # user_id -> horário em que pode reviver (não adianta sair e voltar)
+KNOCK_S = 3                   # quem zera a vida só cai no chão e levanta sozinho depois disso
 
 conns = set()
 _next_id = 1
@@ -395,8 +394,6 @@ def handle(c, m):
             return
         was = c.p is not None
         apply_profile(c, m)
-        if c.uid and _deaths.get(c.uid, 0) > time.time() and not is_premium(c):   # morreu e saiu: continua morto
-            c.dead_until, c.hp = _deaths[c.uid], 0
         if room != c.room:
             if was:
                 broadcast(c.room, {'t': 'leave', 'id': c.id}, exclude=c)
@@ -468,7 +465,6 @@ def handle(c, m):
             return
         if is_premium(c) or time.time() >= c.dead_until:
             c.dead_until, c.hp = 0.0, MAX_HP
-            _deaths.pop(c.uid, None)
             c.send({'t': 'respawned', 'hp': c.hp})
             broadcast(c.room, {'t': 'alive', 'id': c.id}, exclude=c)
         else:
@@ -509,16 +505,14 @@ def handle_bot_hit(c, m, now):
 
 
 def hurt(target, dmg, w, by, now, from_id=None):
-    """Tira vida de um jogador; se zerar, ele cai (sem Premium só revive depois de 5 minutos)."""
+    """Tira vida de um jogador; se zerar, ele é derrubado e levanta sozinho em poucos segundos."""
     target.hurt_t = now
     target.hp = max(0, target.hp - dmg)
     target.send({'t': 'dmg', 'from': from_id, 'nick': by, 'amount': dmg, 'hp': target.hp, 'w': w})
     if target.hp > 0:
         return False
-    wait = 0 if is_premium(target) else RESPAWN_FREE_S
-    target.dead_until = time.time() + wait if wait else time.time()
-    if target.uid and wait:
-        _deaths[target.uid] = target.dead_until
+    wait = KNOCK_S
+    target.dead_until = time.time() + wait
     target.p['a'] = 'ko'
     target.send({'t': 'dead', 'by': by, 'wait': wait, 'premium': is_premium(target)})
     broadcast(target.room, {'t': 'died', 'id': target.id, 'by': by, 'nick': target.p['nick'], 'w': w})
@@ -703,6 +697,10 @@ async def tick_loop():
         rooms = {}
         mono = time.monotonic()
         for c in conns:
+            if c.p and c.dead_until and time.time() >= c.dead_until:   # derrubado: levanta sozinho com a vida cheia
+                c.dead_until, c.hp = 0.0, MAX_HP
+                c.send({'t': 'respawned', 'hp': c.hp})
+                broadcast(c.room, {'t': 'alive', 'id': c.id}, exclude=c)
             if c.p and not c.dead_until and c.hp < MAX_HP and mono - c.hurt_t > 8:   # mesmo ritmo do jogo: 4 de vida por segundo
                 c.hp = min(MAX_HP, c.hp + 4 * TICK)
             if c.p:

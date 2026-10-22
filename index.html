@@ -143,7 +143,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 .tile .lock{position:absolute;top:5px;left:7px;font-size:10px;color:var(--gold)}
 #hp{position:absolute;left:50%;transform:translateX(-50%);top:64px;width:260px;padding:8px 12px;font-size:12px;font-weight:700}
 #hp .bar{height:8px}#hp .bar i{background:linear-gradient(90deg,#e0464a,#f08a4b)}
-#death{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(340px,calc(100vw - 28px));padding:20px;text-align:center;z-index:5}
 #dmgFlash{position:absolute;inset:0;background:radial-gradient(circle,rgba(255,0,0,0) 40%,rgba(200,0,0,.45));pointer-events:none!important}
 #raceHud{position:absolute;left:50%;transform:translateX(-50%);top:64px;padding:10px 18px;text-align:center;font-weight:800}
 #raceHud .big{font-family:Anton,Impact;font-size:42px;font-weight:400}
@@ -241,7 +240,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
           <div id="lobbyCustom"></div>
           <div class="prem-box">
             <div style="display:flex;justify-content:space-between;align-items:center"><b>♛ Premium · opcional</b><span class="kicker">R$ 47,90 · pagamento único</span></div>
-            <ul><li>Armas: bastão, espada, pistola e paintball</li><li>Reviver na hora (sem esperar 5 min)</li><li>Todos os 83 personagens especiais</li><li>Todos os veículos: carro, moto, caminhão de som…</li><li>Superchat com voz, spray e cartazes ilimitados</li><li>Debates, Crush e selo ♛ no chat</li></ul>
+            <ul><li>Armas: bastão, espada, pistola e paintball</li><li>Todos os 83 personagens especiais</li><li>Todos os veículos: carro, moto, caminhão de som…</li><li>Superchat com voz, spray e cartazes ilimitados</li><li>Debates, Crush e selo ♛ no chat</li></ul>
             <button class="btn small gold" style="margin-top:10px" data-act="premium">Conhecer o Premium →</button>
           </div>
         </div>
@@ -277,7 +276,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="panel rcard green" data-act="debates"><b>Debates ao vivo · <span id="debCount">0</span></b><small>Ouça ou entre na fila</small></button>
     <button class="panel rcard crush" data-act="crush"><b>💘 Crush</b><small>Exclusivo Premium · conheça</small></button>
   </div>
-  <div id="death" class="panel hidden"></div>
   <div id="dmgFlash" class="hidden"></div>
   <div id="hp" class="panel hidden"><div style="display:flex;justify-content:space-between"><span>❤ Vida</span><span id="hpTxt">100</span></div><div class="bar"><i id="hpBar" style="width:100%"></i></div></div>
   <div id="raceHud" class="panel hidden"></div>
@@ -1451,7 +1449,7 @@ function makeBot(team, opts={}) {
   const weapon = opts.weapon || pick(BOT_WEAPONS);
   const look = randomLook(team, .5); const c = buildCharacter(look); setHeld(c, {type:'obj', id:'w_' + weapon}, team);
   const zp = randomZonePoint();
-  const b = {c, team, nick:opts.nick || botNick(), pos:new V3(zp.x, 0, zp.zz), zone:zp.z, h:rand(0, 6.28), target:null, state:'idle', timer:rand(0, 5), speed:rand(1.1, 1.7), pvp:true, weapon, foe:null, scan:rand(0, .6), aggro:0, hp:100, ko:0, atkCd:rand(0, 2), atk:0, tag:null, bubble:null, follow:0, seat:null, debate:null, premium:true};
+  const b = {c, team, nick:opts.nick || botNick(), pos:new V3(zp.x, 0, zp.zz), zone:zp.z, h:rand(0, 6.28), target:null, state:'idle', timer:rand(0, 5), speed:rand(1.1, 1.7), pvp:true, weapon, foe:null, scan:rand(0, .6), aggro:0, calm:Math.random() < .5, hp:100, ko:0, atkCd:rand(0, 2), atk:0, tag:null, bubble:null, follow:0, seat:null, debate:null, premium:true};
   b.tag = labelSprite((b.premium ? '♛ ' : '') + b.nick, {dot:team.c1, fs:24}); b.tag.position.y = c.raise ? 3.75 : 2.1; c.root.add(b.tag);
   c.root.position.copy(b.pos); scene.add(c.root);
   return b;
@@ -1486,7 +1484,7 @@ function updateBots(dt) {
       if (b.follow <= 0 && b.heart) { disposeSprite(b.heart); b.heart = null; }
     } else if (foe) {   // luta: corre até o inimigo e ataca quando estiver no alcance da arma
       const w = WEAPON[b.weapon], dx = foe.pos.x - b.pos.x, dz = foe.pos.z - b.pos.z, d = Math.max(Math.hypot(dx, dz), .1);
-      if (d > (w.ranged ? 16 : w.reach*.85)) { mvx = dx/d; mvz = dz/d; sp = 3.6; b.state = 'walk'; }
+      if (d > (w.ranged ? 14 : w.reach*.85)) { mvx = dx/d; mvz = dz/d; sp = 2.8; b.state = 'walk'; }
       else { b.h = Math.atan2(dx, dz); b.state = 'idle'; if (b.atkCd <= 0) botAttack(b, w, foe, dx/d, dz/d); }
     } else {
       if (b.state === 'walk' && b.target) {
@@ -1750,7 +1748,7 @@ function attack() {
   }, 160);
 }
 function hitBot(b, w, fx, fz, color) {
-  b.hp -= w.dmg; b.aggro = 6; b.foe = P; sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, color || '#ffdd55', 14);   // apanhou: vem pra cima de você
+  b.hp -= w.dmg; b.aggro = 4; b.foe = P; sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, color || '#ffdd55', 14);   // apanhou: vem pra cima de você
   if (fx !== undefined) { b.pos.x += fx*.8; b.pos.z += fz*.8; }
   if (b.hp <= 0) { b.ko = 8; b.foe = null; prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Você derrubou ${b.nick}! (${prof.kos})`); say(b, pick(['Aiii! 😵', 'Essa doeu!', 'Volto já!'])); }
 }
@@ -1758,9 +1756,9 @@ function hitBot(b, w, fx, fz, color) {
 const nearCam = (x, z) => Math.hypot(cam.focus.x - x, cam.focus.z - z) < 28;
 function botFoe(b, pAlive) {
   const meOk = pAlive && !P.dead && b.team.id !== prof.team && T > (P.safeUntil || 0);
-  if (meOk && b.aggro > 0) return P;
-  let best = null, bd = 35;
-  if (meOk) { const d = Math.hypot(P.pos.x - b.pos.x, P.pos.z - b.pos.z); if (d < bd) { best = P; bd = d; } }
+  if (meOk && b.aggro > 0) return P;   // quem apanhou de você revida
+  let best = null, bd = 18;
+  if (meOk && !b.calm) { const d = Math.hypot(P.pos.x - b.pos.x, P.pos.z - b.pos.z); if (d < 10) { best = P; bd = d; } }   // só metade dos bots vem atrás de você, e só de perto
   for (const o of bots) {
     if (o === b || o.ko > 0 || o.seat || o.team === b.team) continue;
     const d = Math.hypot(o.pos.x - b.pos.x, o.pos.z - b.pos.z); if (d < bd) { best = o; bd = d; }
@@ -1768,10 +1766,10 @@ function botFoe(b, pAlive) {
   return best;
 }
 function botAttack(b, w, foe, fx, fz) {
-  b.atk = 1; b.atkCd = w.cd*rand(2.2, 3.5);
+  b.atk = 1; b.atkCd = w.cd*rand(4, 6.5);
   const loud = nearCam(b.pos.x, b.pos.z);
   if (w.ranged) {
-    const a = Math.atan2(fx, fz) + rand(-.07, .07), dx = Math.sin(a), dz = Math.cos(a);
+    const a = Math.atan2(fx, fz) + rand(-.16, .16), dx = Math.sin(a), dz = Math.cos(a);
     spawnShot(b.pos.x + dx*.7, 1.45, b.pos.z + dz*.7, dx, dz, w, w.paint ? pick(SPRAYC.filter(c => c !== '#111111')) : w.color, false, b);
     if (loud) sfx('shot'); return;
   }
@@ -1788,7 +1786,7 @@ function hurtByBot(b, w) {   // online quem tira a vida é o servidor; offline �
   if (P.dead || G.mode !== 'play') return;
   if (NET.on) return netSend({t:'botHit', w:w.id, by:b.nick});
   P.hp = Math.max(0, P.hp - w.dmg); onDamage({hp:P.hp, w:w.id});
-  if (P.hp <= 0) enterDead(prof.premium ? 0 : 300, b.nick);
+  if (P.hp <= 0) enterDead(KNOCK_S, b.nick);
 }
 const shots = [];
 function shoot(w) {
@@ -1827,7 +1825,8 @@ function updateShots(dt) {
     }
   }
 }
-/* ---- vida, morte e reviver (o servidor decide; sem Premium a espera é de 5 minutos) ---- */
+/* ---- vida e queda: quem zera a vida só é derrubado e levanta sozinho em 3 s (o servidor decide) ---- */
+const KNOCK_S = 3;
 function onDamage(m) {
   P.hp = m.hp; P.lastHit = T; sfx('hit'); updateHP();
   burst(P.pos.x, 1.4, P.pos.z, m.w === 'paintball' ? '#ff3b6b' : '#ffdd55', 14);
@@ -1835,23 +1834,18 @@ function onDamage(m) {
 }
 function enterDead(wait, by) {
   if (!P.c) return;
-  P.dead = true; P.hp = 0; P.deadUntil = performance.now()/1000 + (wait || 0); P.moveTarget = null; P.emote = null; P.seat = null; closePop();
+  const was = P.dead;
+  P.dead = true; P.hp = 0; P.deadUntil = performance.now()/1000 + Math.min(wait || KNOCK_S, KNOCK_S); P.moveTarget = null; P.emote = null; P.seat = null; closePop();
   if (P.veh) dismount(true);
-  $('#death').dataset.by = by || ''; $('#death').classList.remove('hidden'); renderDeath(); updateHP();
+  if (!was) toast(`💥 ${by ? by + ' te derrubou!' : 'Você foi derrubado!'} Levantando…`);
+  updateHP();
 }
-function renderDeath() {
-  if (!P.dead) return;
-  const el = $('#death'), left = Math.max(0, Math.ceil(P.deadUntil - performance.now()/1000)), can = prof.premium || left <= 0, by = el.dataset.by;
-  const key = can + ':' + left + ':' + prof.premium; if (el.dataset.k === key) return; el.dataset.k = key;
-  el.innerHTML = `<div class="kicker">Você caiu</div><h3 style="font-size:22px;margin:4px 0 8px">💀 ${by ? 'Derrubado por ' + esc(by) : 'Você foi derrubado'}</h3>
-  ${can ? `<button class="btn gold big" style="width:100%" id="revive">Reviver agora</button>` : `<p class="mut">Sem Premium, você volta em</p><div style="font-family:Anton,Impact;font-size:44px;margin:4px 0 10px">${mmss(left)}</div><button class="btn gold" style="width:100%" id="revivePrem">♛ Reviver na hora com o Premium</button>`}
-  <button class="btn ghost small" style="width:100%;margin-top:6px" data-act="sair">Voltar ao lobby</button>`;
-  const rv = $('#revive'); if (rv) rv.onclick = () => { if (NET.on) netSend({t:'respawn'}); else leaveDead(); };
-  const rp = $('#revivePrem'); if (rp) rp.onclick = () => openPremium('Quem é Premium revive na hora, quantas vezes quiser.');
+function checkGetUp() {   // o servidor manda levantar; se a mensagem atrasar (ou sem servidor), levanta aqui mesmo
+  if (P.dead && performance.now()/1000 > P.deadUntil + (NET.on ? 1.5 : 0)) leaveDead();
 }
 function leaveDead() {
-  P.dead = false; P.hp = 100; const el = $('#death'); el.classList.add('hidden'); el.dataset.k = '';
-  spawnPlayer(); updateHP(); toast('Você voltou para a avenida! ✊');
+  P.dead = false; P.hp = 100; P.safeUntil = T + 6; P.c.root.rotation.x = 0; P.c.root.position.y = 0;   // levanta no mesmo lugar
+  updateHP();
 }
 function updateHP() { const show = P.pvp || P.hp < 100 || P.dead; $('#hp').classList.toggle('hidden', !show || G.mode !== 'play'); $('#hpBar').style.width = Math.max(0, P.hp) + '%'; $('#hpTxt').textContent = Math.ceil(Math.max(0, P.hp)) + ' / 100'; }
 
@@ -1866,7 +1860,7 @@ function updatePlayer(dt) {
     if (P.ko <= 0) { c.root.rotation.x = 0; spawnPlayer(); updateHP(); }
     return;
   }
-  if (P.dead) { c.root.rotation.x = -Math.PI/2*.95; c.root.position.y = .15; return; }   // caído, esperando reviver
+  if (P.dead) { c.root.rotation.x = -Math.PI/2*.95; c.root.position.y = .15; return; }   // derrubado: no chão até levantar
   if (T - P.lastHit > 8 && P.hp < 100) { P.hp = Math.min(100, P.hp + 4*dt); updateHP(); }   // mesmo ritmo do servidor
   if (!prof.premium && prof.sprayLeft < SPRAY_FREE) { P.sprayT += dt; if (P.sprayT > 60) { P.sprayT = 0; prof.sprayLeft++; if (G.pop === 'spray') refreshPop(); } }
   if (P.atk > 0) P.atk -= dt*3;
@@ -2339,7 +2333,7 @@ function startWatch() {
   netSend({t:'map', map:prof.map});
 }
 function toLobby() {
-  P.dead = false; $('#death').classList.add('hidden'); $('#death').dataset.k = '';
+  P.dead = false;
   netSend({t:'leave'});
   if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden'); $('#hp').classList.add('hidden');
   G.mode = 'lobby'; G.aerial = false; G.sprayMode = false; closePop(); $('#hud').classList.add('hidden'); $('#lobby').classList.remove('hidden'); $('#joy').classList.add('hidden'); $('#jumpBtn').classList.add('hidden');
@@ -2364,9 +2358,9 @@ function refreshPop() {
     const sp = prof.spray;
     el.innerHTML = popHead('Spray', 'Clique no chão perto de você para pintar, ou aperte <b>E</b>.') + `<div class="sec"><h4>Estampa</h4><div class="row">${STAMPS.map(s => `<button class="chip ${sp.stamp === s.id ? 'on' : ''}" data-stamp="${s.id}">${s.name}</button>`).join('')}</div></div><div class="sec"><h4>Cor</h4><div class="row">${SPRAYC.map(c => `<button class="swatch ${sp.color === c ? 'on' : ''}" data-scol="${c}" style="background:${c}"></button>`).join('')}</div></div><div class="sec" style="display:flex;justify-content:space-between;align-items:center"><span class="mut">Cargas: <b style="color:#fff">${prof.premium ? '∞ (Premium)' : prof.sprayLeft + ' restantes'}</b></span><button class="btn gold small" data-act="spraynow">Pintar agora (E)</button></div>`;
   } else if (n === 'pvp') {
-    el.innerHTML = popHead('Luta', 'O dano está liberado entre times diferentes. <b>P</b> liga o modo luta; <b>Espaço</b> ataca. Sem Premium, quem cai espera 5 minutos para voltar; com Premium, revive na hora.') + `<div class="grid3">${WEAPONS.map(w => `<button class="tile ${P.pvp && P.weapon === w.id ? 'on' : ''}" data-weapon="${w.id}">${owns('weapon', w) ? '' : '<span class="lock">♛</span>'}<span class="em">${w.em}</span>${w.name}<small class="mut" style="display:block;font-size:10.5px">dano ${w.dmg}${w.ranged ? ' · tiro' : ''}</small></button>`).join('')}</div>`
+    el.innerHTML = popHead('Luta', 'O dano está liberado entre times diferentes. <b>P</b> liga o modo luta; <b>Espaço</b> ataca. Quem zera a vida é derrubado e levanta em 3 segundos.') + `<div class="grid3">${WEAPONS.map(w => `<button class="tile ${P.pvp && P.weapon === w.id ? 'on' : ''}" data-weapon="${w.id}">${owns('weapon', w) ? '' : '<span class="lock">♛</span>'}<span class="em">${w.em}</span>${w.name}<small class="mut" style="display:block;font-size:10.5px">dano ${w.dmg}${w.ranged ? ' · tiro' : ''}</small></button>`).join('')}</div>`
       + `<div class="list" style="margin-top:10px"><div class="li"><div><b>Derrubados por você</b><small>Total da sua conta</small></div><b>${prof.kos || 0}</b></div></div><button class="btn ${P.pvp ? 'red' : 'gold'}" style="width:100%;margin-top:12px" data-act="pvptoggle">${P.pvp ? 'Sair do modo luta' : 'Entrar no modo luta (P)'}</button>`
-      + (prof.premium ? '' : `<button class="btn small" style="width:100%;margin-top:6px" data-act="premium">♛ Armas e reviver na hora com o Premium</button>`);
+      + (prof.premium ? '' : `<button class="btn small" style="width:100%;margin-top:6px" data-act="premium">♛ Liberar as armas com o Premium</button>`);
   } else if (n === 'anim') {
     const A = [['dance', '💃', 'Dançar', '7'], ['jump', '🦘', 'Pular', '8'], ['wave', '👋', 'Acenar', '6'], ['clap', '👏', 'Aplaudir', '5'], ['sitground', '🧘', 'Sentar', '4']];
     el.innerHTML = popHead('Animações', 'Celebre, dance e interaja com as pessoas na avenida.') + `<div class="grid3">${A.map(([id, em, nm, k]) => `<button class="tile ${P.emote === id ? 'on' : ''}" data-emote="${id}"><span class="k">${k}</span><span class="em">${em}</span>${nm}</button>`).join('')}</div>`;
@@ -2420,7 +2414,7 @@ $('#chatMin').onclick = () => { const h = $('#chatBody').classList.toggle('hidde
 $('#msgs').addEventListener('click', e => { const r = e.target.closest('.rep'); if (r) { r.closest('.msg').style.opacity = .3; toast('Mensagem denunciada. Obrigado por ajudar a manter a avenida em paz.'); } });
 
 // O Premium (pagamento único na Cakto) libera tudo do jogo, menos anunciar nos telões.
-const PREMIUM_ALL = ['Todos os 83 personagens especiais', 'Todos os veículos: carro, moto, caminhão de som, carreta, dirigível, Tesla, montarias…', 'Armas: bastão, espada, pistola e paintball', 'Reviver na hora, quantas vezes quiser (sem esperar 5 min)', 'Superchat com voz, fixado e nos telões', 'Todas as bandeiras e objetos de mão', 'Spray ilimitado e até 20 cartazes', 'Debates, Crush e selo ♛ no nome'];
+const PREMIUM_ALL = ['Todos os 83 personagens especiais', 'Todos os veículos: carro, moto, caminhão de som, carreta, dirigível, Tesla, montarias…', 'Armas: bastão, espada, pistola e paintball', 'Superchat com voz, fixado e nos telões', 'Todas as bandeiras e objetos de mão', 'Spray ilimitado e até 20 cartazes', 'Debates, Crush e selo ♛ no nome'];
 function openPremium(why) {
   const can = !!CAKTO_CHECKOUT_URL;
   openModal(`<div class="kicker">Premium · pagamento único</div><h3>♛ Premium</h3>${why ? `<p style="color:var(--gold);font-weight:600;margin-top:4px">${esc(why)}</p>` : ''}
@@ -2454,7 +2448,7 @@ function waitPremium() {
     const st = $('#wpState'); if (st) st.textContent = `Conferindo… (${n})`;
     if (data && data.premium) {
       clearInterval(G.premT); prof.premium = true; save(); renderAccount(); refreshAllUI(); if (P.c) { rebuildPlayer(); netHello(true); }
-      openModal(`<div class="kicker">Premium</div><h3>♛ Você agora é Premium!</h3><p class="mut">Tudo liberado: personagens, veículos, armas, reviver na hora e superchat. Obrigado pelo apoio! 💛</p><button class="btn gold" style="width:100%;margin-top:12px" data-close>Bora pra avenida</button>`);
+      openModal(`<div class="kicker">Premium</div><h3>♛ Você agora é Premium!</h3><p class="mut">Tudo liberado: personagens, veículos, armas e superchat. Obrigado pelo apoio! 💛</p><button class="btn gold" style="width:100%;margin-top:12px" data-close>Bora pra avenida</button>`);
       sfx('match');
     }
   }, 5000);
@@ -2804,7 +2798,7 @@ function frame(now) {
   chatT -= dt; if (chatT <= 0) { chatT = rand(1.6, 4.2); if (G.mode !== 'lobby') botChatter(); }
   telT -= dt; if (telT <= 0) { telT = 5; G.telIdx++; drawTeloes(); }
   miniT -= dt; if (miniT <= 0 && G.mode !== 'lobby') { miniT = .07; drawMini(); }
-  uiT -= dt; if (uiT <= 0) { uiT = .25; uiTick(); renderDeath(); }
+  uiT -= dt; if (uiT <= 0) { uiT = .25; uiTick(); checkGetUp(); }
 }
 function uiTick() {
   const counts = teamOnline();
