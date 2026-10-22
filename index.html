@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#14201a">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -17,7 +17,7 @@
 <style>
 :root{--bg:#121a16;--panel:rgba(20,36,28,.94);--panel2:#1c3127;--panel3:#24402f;--line:rgba(255,255,255,.09);--gold:#ecd27e;--gold2:#c9ad55;--txt:#eef3ee;--mut:#9fb2a6;--red:#e0464a;--green:#52d17c;--r:14px}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,Arial,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 input,select,textarea{font:inherit;color:var(--txt);background:#0f1a14;border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;width:100%}
 input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
@@ -185,7 +185,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
   .lgrid{grid-template-columns:1fr 1fr}.pvwrap{height:300px}.chooser{max-height:none;min-height:0}.display{font-size:30px}
 }
 /* aberto pelo ícone da Tela de Início: já está em tela cheia; respeita o entalhe/câmera do iPhone deitado */
-.standalone .fsBtn{display:none!important}
+@media (pointer:coarse){.fsBtn{display:none!important}input,textarea,select{font-size:16px}}
 @supports (padding:env(safe-area-inset-left)){
   .htop{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-top:max(10px,env(safe-area-inset-top))}
   .info,#mini{left:max(14px,env(safe-area-inset-left))}.rcol,#chat{right:max(14px,env(safe-area-inset-right))}
@@ -309,7 +309,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 <div id="botCard" class="panel hidden"></div>
 <div id="joy" class="hidden"><i></i></div><button id="jumpBtn" class="hidden">PULAR</button>
 <div id="toast"></div>
-<div id="rotate" class="hidden"><div class="ic">📱</div><b style="font-size:20px">Gire o celular</b><p class="mut">A avenida é na horizontal. Deite o celular para jogar.</p><button class="btn gold" id="rotBtn">Tela cheia na horizontal</button></div>
+<div id="rotate" class="hidden"><div class="ic">📱</div><b style="font-size:20px">Gire o celular</b><p class="mut">A avenida é na horizontal. Deite o celular para jogar.</p></div>
 <div id="modalWrap" class="hidden"><div id="modal"></div></div>
 
 <script type="module">
@@ -2202,41 +2202,26 @@ const validNick = () => nickError($('#nick').value);
 $('#enterBtn').onclick = () => {
   if (needAccount()) { AUTH.after = () => $('#enterBtn').click(); return openAuth('entrar', 'Entre pra jogar e falar no chat. É grátis e leva poucos segundos. Sem conta, você pode assistir do alto.'); }
   const err = validNick(); if (err) { toast(err); $('#nick').focus(); $('#nickHint').style.color = 'var(--red)'; return; }
-  prof.nick = $('#nick').value.trim(); save(true); audioInit(); if (isTouch) goLandscape(); startPlay();
+  prof.nick = $('#nick').value.trim(); save(true); audioInit(); startPlay();
 };
-$('#watchBtn').onclick = () => { audioInit(); if (isTouch) goLandscape(); startWatch(); };
+$('#watchBtn').onclick = () => { audioInit(); startWatch(); };
 
-/* ================= TELA CHEIA / HORIZONTAL ================= */
+/* ================= TELA CHEIA (PC) / HORIZONTAL (celular) ================= */
+// No celular não há tela cheia: só o aviso para deitar o aparelho.
 const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
-function enterFullscreen() { const d = document.documentElement, rq = d.requestFullscreen || d.webkitRequestFullscreen; return rq ? Promise.resolve(rq.call(d, {navigationUI:'hide'})).catch(() => {}) : Promise.resolve(); }
-// iPhone não permite tela cheia em sites: o caminho é instalar na Tela de Início (abre sem as barras do navegador).
-const isIPhone = /iPhone|iPod/.test(navigator.userAgent);
-const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches;
-function showInstallHelp() {
-  openModal(`<div class="kicker">iPhone · tela cheia</div><h3>Jogue em tela cheia</h3>
-  <p class="mut">O iPhone não deixa sites ficarem em tela cheia. Instale a Avenida Livre na Tela de Início: ela abre como um app, sem as barras do navegador.</p>
-  <div class="list">
-    <div class="li"><div><b>1. Abra no Safari</b><small>Se estiver em outro navegador, copie o link e abra no Safari.</small></div></div>
-    <div class="li"><div><b>2. Toque em Compartilhar</b><small>O quadrado com a seta para cima (□↑), na barra do Safari.</small></div></div>
-    <div class="li"><div><b>3. "Adicionar à Tela de Início"</b><small>Role a lista para baixo se não aparecer de cara, e toque em Adicionar.</small></div></div>
-    <div class="li"><div><b>4. Abra pelo ícone</b><small>Deite o celular e jogue em tela cheia.</small></div></div>
-  </div><button class="btn gold" style="width:100%;margin-top:14px" data-close>Entendi</button>`);
-}
 function toggleFullscreen() {
   if (fsEl()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
-  if (isIPhone && !isStandalone()) return showInstallHelp();
-  if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) return toast('Seu navegador não permite tela cheia aqui.');
-  enterFullscreen();
+  const d = document.documentElement, rq = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (!rq) return toast('Seu navegador não permite tela cheia aqui.');
+  Promise.resolve(rq.call(d)).catch(() => {});
 }
-// No celular: tela cheia + trava na horizontal (Android/Chrome). No iPhone a trava não existe; o aviso pede para girar.
-async function goLandscape() { if (!isIPhone) await enterFullscreen(); try { await screen.orientation.lock('landscape'); } catch (e) {} checkOrient(); }
-if (isStandalone()) document.documentElement.classList.add('standalone');
 function checkOrient() { $('#rotate').classList.toggle('hidden', !(isTouch && G.mode !== 'lobby' && innerHeight > innerWidth)); }
 function onFsChange() { const on = !!fsEl(); $$('.fsTxt').forEach(s => s.textContent = on ? 'Sair da tela cheia' : 'Tela cheia'); }
 document.addEventListener('fullscreenchange', onFsChange); document.addEventListener('webkitfullscreenchange', onFsChange);
 addEventListener('resize', checkOrient); addEventListener('orientationchange', () => setTimeout(checkOrient, 200));
-$('#rotBtn').onclick = () => isIPhone && !isStandalone() ? showInstallHelp() : goLandscape();
-if (isIPhone) $('#rotBtn').textContent = 'Como jogar em tela cheia';
+// Sem zoom no celular: bloqueia pinça (iPhone) e toque duplo (o resto vem do viewport e do touch-action no CSS).
+document.addEventListener('gesturestart', e => e.preventDefault()); document.addEventListener('gesturechange', e => e.preventDefault());
+document.addEventListener('dblclick', e => { if (isTouch) e.preventDefault(); }, {passive:false});
 
 /* ================= MODOS ================= */
 function startPlay() {
