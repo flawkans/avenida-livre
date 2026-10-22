@@ -640,7 +640,7 @@ function shirtMats(type, team) {
   const side = mat(base), fm = new THREE.MeshLambertMaterial({map:front});
   let back = side;
   if (num) back = new THREE.MeshLambertMaterial({map:canvasTex(128, 128, (x,w,h) => { x.fillStyle = base; x.fillRect(0,0,w,h); x.fillStyle = trim; x.font = '900 70px Inter,Arial'; x.textAlign = 'center'; x.fillText(num, 64, 100); })});
-  const r = {mats:[side, side, side, side, fm, back], base};
+  const r = {mats:[side, side, side, side, fm, back], base, trim};
   shirtCache.set(key, r); return r;
 }
 
@@ -705,107 +705,156 @@ function specFront(sp) {
 let _tatMat = null;
 function tattooMat() { if (!_tatMat) _tatMat = new THREE.MeshLambertMaterial({map:canvasTex(32, 64, x => { x.fillStyle = '#c99a78'; x.fillRect(0, 0, 32, 64); x.strokeStyle = '#2a2a3a'; x.lineWidth = 2; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(rand(0, 32), rand(0, 64), rand(3, 7), 0, rand(2, 6)); x.stroke(); } })}); return _tatMat; }
 
+/* Boneco arredondado: geometrias compartilhadas (capsulas, esferas, troncos) para não pesar com muita gente. */
+const GEO = new Map();
+function geo(k, make) { let g = GEO.get(k); if (!g) { g = make(); GEO.set(k, g); SHARED.add(g); } return g; }
+const capG = (r, l) => geo(`cap${r}_${l}`, () => new THREE.CapsuleGeometry(r, l, 4, 10));
+const SPH2 = geo('sph2', () => new THREE.SphereGeometry(1, 20, 16));
+const capPart = (a, b) => geo(`cp${a}_${b}`, () => new THREE.SphereGeometry(1, 20, 12, 0, Math.PI*2, 0, Math.PI*a));      // calota de cima (cabelo)
+const bandG = (p0, pl, t0, tl) => geo(`bd${p0}_${pl}_${t0}_${tl}`, () => new THREE.SphereGeometry(1, 18, 8, Math.PI*p0, Math.PI*pl, Math.PI*t0, Math.PI*tl)); // faixa da esfera (barba, franja lateral)
+const torsoG = (top, bot) => geo(`tr${top}_${bot}`, () => new THREE.CylinderGeometry(top, bot, 1, 22, 1, false, Math.PI));   // costura nas costas, frente no meio da textura
+const frustG = (top, bot) => geo(`fr${top}_${bot}`, () => new THREE.CylinderGeometry(top, bot, 1, 20, 1, true));
+function part(g, m, sx, sy, sz, x, y, z, parent) { const me = new THREE.Mesh(g, typeof m === 'string' ? mat(m) : m); me.scale.set(sx, sy, sz); me.position.set(x, y, z); me.castShadow = true; parent.add(me); return me; }
+// Textura que dá a volta no tronco: frente (canvas 128x128) no meio, costas nas bordas.
+const wrapCache = new Map();
+function wrapMat(r) {
+  const fm = r.mats && r.mats[4], front = fm && fm.map && fm.map.userData.canvas; if (!front) return [mat(r.base), mat(r.base), mat(r.base)];
+  const key = fm.uuid; if (wrapCache.has(key)) return wrapCache.get(key);
+  const bm = r.mats[5], back = bm && bm.map && bm.map.userData.canvas;
+  const t = canvasTex(256, 128, x => { x.fillStyle = r.base; x.fillRect(0, 0, 256, 128); if (back) { x.drawImage(back, 64, 0, 64, 128, 0, 0, 64, 128); x.drawImage(back, 0, 0, 64, 128, 192, 0, 64, 128); } x.drawImage(front, 64, 0, 128, 128); });
+  const out = [new THREE.MeshLambertMaterial({map:t}), mat(r.base), mat(r.base)]; wrapCache.set(key, out); return out;
+}
+
 function buildCharacter(look) {
   const team = TEAM[look.team] || TEAMS[0], ch = CHAR[look.char] || CHARS[0], sp = ch.special, f = ch.g === 'f';
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const xs = (sp && sp.x) || [], has = k => xs.includes(k);
-  let skin, hairCol, hairStyle, beard, beardCol, glasses, topMats, topBase, sleeveCol, sleeveLen, legType, pants, shoe;
+  let skin, hairCol, hairStyle, beard, beardCol, glasses, topR, topBase, sleeveCol, sleeveLen, legType, pants, shoe, trim = null;
   if (sp) {
     skin = sp.sk; hairCol = sp.hc || '#2a1b12'; hairStyle = sp.h || 'short'; beard = sp.b || 0; beardCol = sp.bc || hairCol; glasses = sp.gl;
-    const tm = specFront(sp); topMats = tm.mats; topBase = tm.base;
+    topR = specFront(sp); topBase = topR.base;
     const t = sp.top[0];
     sleeveCol = t === 'vest' ? (sp.top[2] || '#fff') : t === 'shirtBR' ? '#f6d31c' : t === 'skeleton' ? sp.top[1] : topBase;
+    if (t === 'shirtBR') trim = '#1e9b45';
     sleeveLen = NO_SLEEVE.has(t) ? 0 : LONG_SLEEVE.has(t) ? .5 : .27;
     legType = (sp.leg || ['pants'])[0]; pants = (sp.leg || [])[1] || '#2a2a33'; shoe = sp.sh || '#111';
   } else {
     skin = (SKINS[look.skin ?? 1] || SKINS[1]).c;
     hairCol = (HAIRC[look.hairColor] && HAIRC[look.hairColor].c) || ch.hairFix || look.natHair || '#2a1b12';
     hairStyle = ch.id === 'mulher' && look.pony ? 'pony' : ch.hair; beard = f ? 0 : ((look.beard || 0) || (ch.must ? 1 : 0)); beardCol = hairCol; glasses = ch.glasses;
-    const sh = shirtMats(look.shirt || 'brasil', team); topMats = sh.mats; topBase = sh.base; sleeveCol = sh.base; sleeveLen = .27;
+    topR = shirtMats(look.shirt || 'brasil', team); topBase = topR.base; sleeveCol = topBase; sleeveLen = .27;
+    trim = topR.trim || null;
     legType = 'pants'; pants = look.pants || (f ? '#33415f' : team.pants); shoe = look.shoe || '#f2f2f2';
   }
-  const muscle = has('muscle') ? 1.25 : 1;
+  const skel = sp && sp.top[0] === 'skeleton', muscle = has('muscle') ? 1.25 : 1;
+  const limb = skel ? .55 : 1;
   const hipY = .9;
+  // pernas: coxa + canela + tênis
   const leg = s => {
-    const g = new THREE.Group(); g.position.set(s*.11, hipY, 0); body.add(g);
-    if (legType === 'shorts') { box(.18, .34, .2, pants, 0, -.17, 0, g); box(.15, .48, .17, skin, 0, -.58, 0, g); }
-    else if (legType === 'skirt' || legType === 'mini') box(.15, .8, .17, skin, 0, -.42, 0, g);
-    else box(.17, .8, .19, pants, 0, -.4, 0, g);
-    box(.18, .11, .3, shoe, 0, -.84, .04, g); return g;
+    const g = new THREE.Group(); g.position.set(s*.1, hipY, 0); body.add(g);
+    const bare = legType === 'skirt' || legType === 'mini', shinBare = bare || legType === 'shorts';
+    part(capG(.1*limb, .24), bare ? skin : pants, 1, 1, 1, 0, -.2, 0, g);
+    part(capG(.08*limb, .28), shinBare ? skin : pants, 1, 1, 1, 0, -.57, 0, g);
+    if (legType === 'shorts') part(capG(.108, .16), pants, 1, 1, 1, 0, -.25, 0, g);
+    const sh = part(capG(.068, .14), shoe, 1.05, .85, 1, 0, -.84, .05, g); sh.rotation.x = Math.PI/2;
+    return g;
   };
   const legL = leg(1), legR = leg(-1);
   const torso = new THREE.Group(); torso.position.y = hipY; body.add(torso);
-  const tw = (f ? .44 : .5)*(muscle > 1 ? 1.12 : 1);
-  box(tw, .62, .27, topMats, 0, .31, 0, torso);
-  if (legType === 'skirt') box(tw + .08, .38, .34, pants, 0, -.14, 0, torso);
-  if (legType === 'mini') box(tw + .06, .2, .32, pants, 0, -.06, 0, torso);
-  if (sp && (sp.top[0] === 'longcoat' || sp.top[0] === 'coat' || sp.top[0] === 'robe')) box(tw + .04, .55, .3, sp.top[1], 0, -.25, 0, torso);
-  if (ch.belly) mk(SPH, mat(sleeveCol), .25, .22, .13, 0, .17, .1, torso);
-  if (has('capeBlack')) { const cape = box(.56, 1.25, .03, '#0a0a0a', 0, -.12, -.16, torso); cape.rotation.x = .1; }
-  if (has('towel')) box(.14, .1, .3, '#ffffff', -(tw/2 - .02), .62, 0, torso);
-  if (has('epaulettes')) for (const s of [-1, 1]) box(.14, .04, .2, '#d4af37', s*(tw/2), .63, 0, torso);
-  if (ch.backpack) box(.36, .42, .15, '#3b4a5c', 0, .33, -.2, torso);
+  const shW = (f ? .23 : .27)*(muscle > 1 ? 1.12 : 1), wW = f ? .2 : .23;
+  part(SPH2, pants, f ? .23 : .22, .13, .16, 0, .03, 0, torso);          // quadril
+  const tm = new THREE.Mesh(torsoG(1, wW/shW), skel ? wrapMat(topR) : wrapMat(topR)); tm.scale.set(shW, .58, f ? .16 : .175); tm.position.y = .33; tm.castShadow = true; torso.add(tm);
+  part(SPH2, sleeveLen ? mat(sleeveCol) : skin, shW*.98, .1, .17, 0, .6, 0, torso);                                            // ombros arredondados
+  if (f && !skel) for (const s of [-1, 1]) part(SPH2, wrapMat(topR)[1], .075, .07, .06, s*.075, .45, .12, torso);                      // busto
+  if (trim) part(geo('collar', () => new THREE.TorusGeometry(1, .18, 8, 18)), trim, .085, .085, .07, 0, .645, .01, torso).rotation.x = Math.PI/2;
+  if (legType === 'skirt') part(frustG(.6, 1), pants, .2, .34, .17, 0, -.12, 0, torso);
+  if (legType === 'mini') part(frustG(.75, 1), pants, .2, .2, .16, 0, -.03, 0, torso);
+  if (sp && ['longcoat', 'coat', 'robe'].includes(sp.top[0])) part(frustG(.85, 1.05), sp.top[1], .22, .5, .17, 0, -.22, 0, torso);
+  if (ch.belly) part(SPH2, mat(sleeveCol), .22, .2, .12, 0, .2, .08, torso);
+  if (has('capeBlack')) { const cape = box(.52, 1.25, .025, '#0a0a0a', 0, -.12, -.16, torso); cape.rotation.x = .1; }
+  if (has('towel')) part(capG(.05, .16), '#ffffff', 1, 1, 1, -(shW - .04), .62, 0, torso).rotation.x = Math.PI/2;
+  if (has('epaulettes')) for (const s of [-1, 1]) part(SPH2, '#d4af37', .08, .025, .09, s*shW*.85, .65, 0, torso);
+  if (ch.backpack) part(capG(.12, .2), '#3b4a5c', 1.4, 1, .7, 0, .35, -.19, torso);
+  // braços: ombro + braço + antebraço + mão
   const arm = s => {
-    const g = new THREE.Group(); g.position.set(s*(tw/2 + .07), .58, 0); torso.add(g);
-    const th = muscle;
-    if (sleeveLen > 0) box(.13*th, sleeveLen, .14*th, mat(sleeveCol), 0, -sleeveLen/2 + .02, 0, g);
-    const tat = has('tattooArms') || (has('tattooRight') && s < 0);
-    const low = .6 - sleeveLen;
-    if (low > .01) box(.11*th, low, .12*th, tat ? tattooMat() : skin, 0, -(sleeveLen + low/2), 0, g);
-    if (has('gloves')) box(.13, .1, .14, '#151515', 0, -.56, 0, g);
+    const g = new THREE.Group(); g.position.set(s*(shW + .055), .56, 0); torso.add(g);
+    const th = muscle*limb, sleeve = mat(sleeveCol), tat = has('tattooArms') || (has('tattooRight') && s < 0);
+    const skinM = tat ? tattooMat() : skin;
+    part(capG(.074*th, .18), sleeveLen > 0 ? sleeve : skinM, 1, 1, 1, 0, -.15, 0, g);
+    if (sleeveLen > 0 && sleeveLen < .4) { part(capG(.086*th, .08), sleeve, 1, 1, 1, 0, -.12, 0, g); if (trim) part(frustG(1, 1), trim, .088*th, .03, .088*th, 0, -.23, 0, g); }
+    part(capG(.062*th, .19), sleeveLen >= .4 ? sleeve : skinM, 1, 1, 1, 0, -.42, 0, g);
+    part(SPH2, has('gloves') ? '#151515' : skin, .06, .07, .05, 0, -.59, .005, g);
     const hand = new THREE.Object3D(); hand.position.y = -.6; g.add(hand); g.userData.hand = hand; return g;
   };
   const armL = arm(1), armR = arm(-1);
-  const head = new THREE.Group(); head.position.y = .62; torso.add(head);
-  box(.12, .08, .12, skin, 0, .03, 0, head);
-  box(.3, .32, .3, skin, 0, .22, 0, head);
-  const eye = has('redEyes') ? '#ff2a2a' : has('skull') ? '#0d0d0d' : '#1a1a1a', ew = has('skull') ? .08 : .05;
-  box(ew, ew, .02, eye, .07, .24, .15, head); box(ew, ew, .02, eye, -.07, .24, .15, head);
-  if (!has('skull')) box(.08, .02, .02, '#7a3b2e', 0, .13, .15, head); else { box(.04, .04, .02, '#0d0d0d', 0, .18, .152, head); box(.14, .02, .02, '#0d0d0d', 0, .1, .152, head); }
+  // cabeça
+  const head = new THREE.Group(); head.position.y = .62; head.scale.setScalar(1.1); torso.add(head);
+  part(geo('neck', () => new THREE.CylinderGeometry(1, 1, 1, 12)), skin, .065, .12, .065, 0, .05, 0, head);
+  const hx = .13, hy = .155, hz = .14;
+  part(SPH2, skin, hx, hy, hz, 0, .22, 0, head);
+  part(SPH2, skin, .1, .06, .1, 0, .12, .025, head);                                   // queixo/mandíbula
+  if (has('elfEars')) for (const s of [-1, 1]) { const e = part(geo('cone', () => new THREE.ConeGeometry(1, 1, 8)), skin, .025, .09, .02, s*.135, .26, 0, head); e.rotation.z = -s*1.1; }
+  else for (const s of [-1, 1]) part(SPH2, skin, .018, .032, .014, s*.13, .21, 0, head);   // orelhas
+  if (skel) { for (const s of [-1, 1]) part(SPH2, '#0d0d0d', .035, .04, .02, s*.05, .235, .125, head); part(SPH2, '#0d0d0d', .015, .02, .01, 0, .19, .14, head); box(.08, .012, .01, '#0d0d0d', 0, .13, .13, head); }
+  else {
+    const eyeC = has('redEyes') ? '#ff2a2a' : '#2a1d14';
+    for (const s of [-1, 1]) {
+      part(SPH2, '#ffffff', .021, .016, .01, s*.048, .235, .128, head);
+      part(SPH2, eyeC, .011, .011, .006, s*.048, .235, .137, head);
+      const br = box(.05, .011, .012, has('skull') ? skin : hairCol, s*.05, .268, .132, head); br.rotation.z = s*-.08;
+    }
+    part(SPH2, skin, .018, .028, .022, 0, .2, .142, head);                                // nariz
+    box(.045, .009, .01, '#9a4a3a', 0, .155, .132, head);                               // boca
+  }
+  // cabelo
   const H = hairCol, hs = hairStyle;
-  const top = () => { box(.32, .08, .32, H, 0, .4, 0, head); box(.32, .2, .06, H, 0, .3, -.14, head); box(.03, .12, .25, H, .155, .31, -.02, head); box(.03, .12, .25, H, -.155, .31, -.02, head); };
-  if (['short', 'spiky', 'long', 'pony', 'bun', 'slick', 'swoop', 'messy', 'big', 'fringe', 'braid', 'pigtails', 'quiff'].includes(hs)) top();
-  if (hs === 'buzz') box(.31, .03, .31, H, 0, .38, 0, head);
-  if (hs === 'spiky') for (let i = -1; i <= 1; i++) { const s = box(.08, .1, .08, H, i*.09, .46, .03, head); s.rotation.z = i*.3; }
-  if (hs === 'long') { box(.33, .48, .07, H, 0, .14, -.16, head); box(.035, .34, .24, H, .16, .2, -.03, head); box(.035, .34, .24, H, -.16, .2, -.03, head); }
-  if (hs === 'pony') box(.09, .32, .09, H, 0, .17, -.21, head);
-  if (hs === 'bun') mk(SPH, H, .09, .09, .09, 0, .44, -.1, head);
-  if (hs === 'bald') { box(.03, .1, .2, H, .155, .28, -.03, head); box(.03, .1, .2, H, -.155, .28, -.03, head); box(.3, .1, .03, H, 0, .28, -.15, head); }
-  if (hs === 'swoop') { box(.34, .1, .2, H, .02, .43, .08, head); box(.08, .08, .3, H, -.15, .4, 0, head); }
-  if (hs === 'slick') box(.32, .04, .34, H, 0, .44, -.01, head);
-  if (hs === 'quiff') box(.2, .12, .12, H, 0, .47, .1, head);
-  if (hs === 'messy') for (let i = 0; i < 5; i++) { const s = box(.1, .08, .1, H, rand(-.12, .12), .45, rand(-.12, .12), head); s.rotation.set(rand(-.5, .5), rand(0, 3), rand(-.5, .5)); }
-  if (hs === 'big') { box(.4, .2, .38, H, 0, .44, -.02, head); box(.06, .3, .32, H, .19, .26, -.02, head); box(.06, .3, .32, H, -.19, .26, -.02, head); box(.38, .3, .08, H, 0, .26, -.18, head); }
-  if (hs === 'curly') for (let i = 0; i < 9; i++) mk(SPH, H, .085, .085, .085, Math.cos(i*.7)*.13, .4 + (i % 2)*.04, Math.sin(i*.7)*.13 - .02, head);
-  if (hs === 'dreads') { box(.32, .08, .32, H, 0, .4, 0, head); for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*1.4 - Math.PI*.2 + Math.PI/2; box(.04, .55, .04, H, Math.cos(a)*.16, .12, -Math.abs(Math.sin(a))*.16, head); } }
-  if (hs === 'fringe') { box(.18, .14, .04, H, .05, .32, .155, head); box(.33, .3, .07, H, 0, .2, -.16, head); }
-  if (hs === 'braid') { box(.33, .2, .07, H, 0, .28, -.16, head); box(.08, .55, .08, H, 0, .02, -.22, head); }
-  if (hs === 'pigtails') for (const s of [-1, 1]) { box(.09, .4, .09, H, s*.2, .2, -.05, head); if (has('bows')) box(.1, .06, .06, '#ffffff', s*.2, .4, -.05, head); }
+  const cap = (a = .55, sc = 1, tilt = -.4) => { const m = part(capPart(a, 0), H, hx*1.08*sc, hy*1.05*sc, hz*1.09*sc, 0, .225, -.008, head); m.rotation.x = tilt; return m; };
+  if (['short', 'long', 'pony', 'bun', 'fringe', 'braid', 'pigtails', 'quiff', 'dreads', 'messy', 'spiky', 'curly'].includes(hs)) cap();
+  if (hs === 'buzz') cap(.5, .97, -.45);
+  if (hs === 'slick') { const m = cap(.5, 1, -.3); m.scale.y *= .9; }
+  if (hs === 'swoop') { cap(.55, 1.04, -.35); part(SPH2, H, .12, .05, .09, .02, .34, .06, head).rotation.z = -.2; }
+  if (hs === 'big') { cap(.62, 1.22, -.25); for (const s of [-1, 1]) part(SPH2, H, .06, .1, .1, s*.13, .24, -.03, head); }
+  if (hs === 'long') { part(capG(.1, .2), H, 1.25, 1, .55, 0, .12, -.09, head); for (const s of [-1, 1]) part(capG(.035, .18), H, 1, 1, 1, s*.12, .15, .0, head); }
+  if (hs === 'pony') part(capG(.045, .2), H, 1, 1, 1, 0, .16, -.17, head);
+  if (hs === 'bun') part(SPH2, H, .07, .07, .07, 0, .37, -.1, head);
+  if (hs === 'bald') { const m = part(bandG(1.05, .9, .4, .2), H, hx*1.04, hy*1.04, hz*1.06, 0, .22, 0, head); }
+  if (hs === 'quiff') part(SPH2, H, .1, .055, .07, 0, .36, .07, head);
+  if (hs === 'spiky' || hs === 'messy') for (let i = 0; i < 6; i++) { const c = part(geo('cone', () => new THREE.ConeGeometry(1, 1, 8)), H, .035, .07, .035, Math.cos(i*1.1)*.08, .37, Math.sin(i*1.1)*.07, head); c.rotation.set(Math.sin(i)*.5, 0, Math.cos(i*2)*.5); }
+  if (hs === 'curly') for (let i = 0; i < 14; i++) { const a = i/14*Math.PI*2; part(SPH2, H, .05, .05, .05, Math.cos(a)*.11, .3 + (i % 3)*.03, Math.sin(a)*.11 - .02, head); }
+  if (hs === 'dreads') for (let i = 0; i < 12; i++) { const a = Math.PI*(.15 + .7*i/11); part(capG(.018, .38), H, 1, 1, 1, Math.cos(a)*.13, .07, -Math.sin(a)*.12, head); }
+  if (hs === 'fringe') { const fr = part(SPH2, H, .09, .07, .04, .04, .27, .12, head); fr.rotation.z = .3; part(capG(.1, .12), H, 1.25, 1, .5, 0, .17, -.09, head); }
+  if (hs === 'braid') for (let i = 0; i < 6; i++) part(SPH2, H, .035, .035, .035, 0, .2 - i*.06, -.15 - i*.005, head);
+  if (hs === 'pigtails') for (const s of [-1, 1]) { part(capG(.04, .22), H, 1, 1, 1, s*.15, .16, -.03, head); if (has('bows')) part(SPH2, '#ffffff', .04, .03, .03, s*.15, .33, -.03, head); }
+  // barba e bigode
   const B = beardCol;
-  if (beard === 1) box(.15, .035, .02, B, 0, .16, .155, head);
-  if (beard === 2) { box(.08, .07, .03, B, 0, .07, .145, head); box(.12, .03, .02, B, 0, .16, .155, head); }
-  if (beard === 3) { box(.31, .08, .05, B, 0, .09, .135, head); box(.03, .14, .2, B, .155, .14, .05, head); box(.03, .14, .2, B, -.155, .14, .05, head); }
-  if (beard >= 4) { box(.32, .2, .09, B, 0, .08, .12, head); box(.035, .2, .22, B, .155, .15, .04, head); box(.035, .2, .22, B, -.155, .15, .04, head); }
-  if (beard === 5) box(.24, .3, .08, B, 0, -.12, .13, head);
-  if (glasses === 'sun') box(.27, .06, .02, '#0d0d0d', 0, .245, .16, head);
-  if (glasses === 'clear' || glasses === 'tortoise') { const gc = glasses === 'tortoise' ? '#6b4428' : '#444'; box(.09, .06, .015, gc, .07, .245, .158, head); box(.09, .06, .015, gc, -.07, .245, .158, head); }
-  if (glasses === 'thick') { box(.1, .07, .02, '#0d0d0d', .07, .245, .158, head); box(.1, .07, .02, '#0d0d0d', -.07, .245, .158, head); box(.04, .02, .02, '#0d0d0d', 0, .26, .158, head); }
-  if (glasses === 'aviator' || glasses === 'yellow') { const lc = glasses === 'aviator' ? '#c8862a' : '#f2d21a'; box(.1, .07, .015, lc, .07, .24, .158, head); box(.1, .07, .015, lc, -.07, .24, .158, head); box(.26, .015, .016, '#d4af37', 0, .275, .16, head); }
-  if (has('mask')) box(.31, .07, .02, '#111', 0, .245, .156, head);
-  if (has('clown')) { box(.3, .1, .01, '#f6f6f6', 0, .24, .151, head); mk(SPH, '#e8204f', .03, .03, .03, 0, .19, .16, head); }
-  if (has('theater')) { box(.15, .32, .01, '#c4161c', .075, .22, .151, head); box(.15, .32, .01, '#2253d6', -.075, .22, .151, head); }
-  if (has('warpaint')) box(.12, .025, .01, '#c4161c', .08, .2, .152, head);
-  if (has('elfEars')) for (const s of [-1, 1]) { const e = box(.04, .12, .06, skin, s*.17, .26, 0, head); e.rotation.z = -s*.5; }
-  if (has('earrings') || has('hoops')) for (const s of [-1, 1]) mk(TOR, '#e6b800', .03, .03, .03, s*.16, .14, .02, head);
-  if (has('headphones')) { box(.34, .04, .06, '#222', 0, .44, 0, head); for (const s of [-1, 1]) box(.05, .1, .1, '#222', s*.165, .26, 0, head); }
-  if (has('flowerCrown')) for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*2; mk(SPH, ['#ff6b8b', '#ffd400', '#ffffff'][i % 3], .03, .03, .03, Math.sin(a)*.16, .42, Math.cos(a)*.16, head); }
+  if (beard === 1 || beard === 2) { const m = part(capG(.012, .06), B, 1, 1, 1, 0, .172, .132, head); m.rotation.z = Math.PI/2; }
+  if (beard === 2) part(SPH2, B, .03, .035, .02, 0, .11, .1, head);
+  if (beard >= 3) part(bandG(.05, .9, .58, beard >= 4 ? .38 : .28), B, hx*1.06, hy*1.08, hz*1.1, 0, .21, 0, head);
+  if (beard >= 4) { const m = part(capG(.012, .06), B, 1, 1, 1, 0, .175, .135, head); m.rotation.z = Math.PI/2; part(SPH2, B, .085, .06, .05, 0, .1, .08, head); }
+  if (beard === 5) part(capG(.06, .18), B, 1.2, 1, .7, 0, -.02, .1, head);
+  // óculos
+  if (glasses) {
+    const frame = {sun:'#0d0d0d', clear:'#444', tortoise:'#6b4428', thick:'#0d0d0d', aviator:'#d4af37', yellow:'#d4af37'}[glasses] || '#444';
+    const lens = {sun:'#0d0d0d', aviator:'#c8862a', yellow:'#f2d21a'}[glasses];
+    const tube = glasses === 'thick' ? .26 : .14;
+    for (const s of [-1, 1]) { part(geo('ring' + tube, () => new THREE.TorusGeometry(1, tube, 6, 16)), frame, .028, .024, .028, s*.05, .236, .14, head); if (lens) part(geo('lens', () => new THREE.CircleGeometry(1, 16)), lens, .027, .023, 1, s*.05, .236, .141, head); }
+    box(.03, .006, .006, frame, 0, .24, .145, head);
+  }
+  // rosto: extras
+  if (has('mask')) part(bandG(.15, .7, .38, .1), '#111', hx*1.04, hy*1.04, hz*1.06, 0, .22, 0, head);
+  if (has('clown')) { for (const s of [-1, 1]) part(SPH2, '#f6f6f6', .04, .04, .01, s*.05, .24, .13, head); part(SPH2, '#e8204f', .028, .028, .028, 0, .2, .15, head); }
+  if (has('theater')) { part(SPH2, '#c4161c', .045, .05, .01, .05, .23, .127, head); part(SPH2, '#2253d6', .045, .05, .01, -.05, .23, .127, head); }
+  if (has('warpaint')) box(.07, .014, .008, '#c4161c', .06, .21, .132, head);
+  if (has('earrings') || has('hoops')) for (const s of [-1, 1]) part(geo('ring.14', () => new THREE.TorusGeometry(1, .14, 6, 16)), '#e6b800', .022, .022, .022, s*.135, .16, .01, head);
+  if (has('headphones')) { const hb = part(geo('band', () => new THREE.TorusGeometry(1, .07, 6, 20, Math.PI)), '#222', .15, .15, .15, 0, .23, 0, head); for (const s of [-1, 1]) part(SPH2, '#222', .025, .05, .05, s*.14, .23, 0, head); }
+  if (has('flowerCrown')) for (let i = 0; i < 12; i++) { const a = i/12*Math.PI*2; part(SPH2, ['#ff6b8b', '#ffd400', '#ffffff'][i % 3], .022, .022, .022, Math.sin(a)*.14, .33, Math.cos(a)*.14 - .01, head); }
   const hat = sp && sp.hat;
-  if (hat && hat[0] === 'fedora') { mk(CYL, hat[1], .26, .02, .26, 0, .4, 0, head); mk(CYL, hat[1], .16, .14, .16, 0, .47, 0, head); mk(CYL, '#2a1a10', .165, .03, .165, 0, .43, 0, head); }
-  if (hat && hat[0] === 'beret') { const b = mk(CYL, hat[1], .19, .06, .19, .02, .43, 0, head); b.rotation.z = -.2; const st = box(.04, .04, .01, '#c4161c', 0, .43, .17, head); st.rotation.z = .8; }
-  if (hat && hat[0] === 'beanie') { box(.33, .14, .33, hat[1], 0, .42, 0, head); box(.34, .04, .34, hat[1], 0, .36, 0, head); }
-  if (!sp && look.cap === 'mst') { box(.33, .09, .33, '#d81f26', 0, .42, 0, head); box(.3, .025, .17, '#d81f26', 0, .385, .21, head); box(.12, .06, .01, '#ffffff', 0, .42, .166, head); }
-  if (sp && sp.hold === 'fish') { const fish = new THREE.Group(); armL.userData.hand.add(fish); fish.position.set(0, -.05, .12); mk(SPH, '#9fb4c0', .07, .13, .32, 0, 0, 0, fish); const tl = mk(CONE, '#7f97a4', .1, .14, .03, 0, 0, -.38, fish); tl.rotation.x = -Math.PI/2; box(.02, .02, .01, '#111', .05, .04, .22, fish); }
-  if (sp && sp.hold === 'swords') for (const a of [armL, armR]) { const s = new THREE.Group(); a.userData.hand.add(s); s.position.set(0, -.04, .05); s.rotation.x = Math.PI/2.3; box(.03, .75, .015, '#d8dde3', 0, -.42, 0, s); box(.16, .03, .04, '#c08a3e', 0, -.05, 0, s); }
+  if (hat && hat[0] === 'fedora') { part(geo('cyl', () => new THREE.CylinderGeometry(1, 1, 1, 20)), hat[1], .22, .012, .22, 0, .33, -.01, head); part(geo('cyl', () => new THREE.CylinderGeometry(1, 1, 1, 20)), hat[1], .13, .12, .13, 0, .4, -.01, head); part(geo('cyl', () => new THREE.CylinderGeometry(1, 1, 1, 20)), '#2a1a10', .133, .025, .133, 0, .355, -.01, head); }
+  if (hat && hat[0] === 'beret') { const b = part(SPH2, hat[1], .16, .045, .15, .03, .35, 0, head); b.rotation.z = -.25; part(geo('cone', () => new THREE.ConeGeometry(1, 1, 5)), '#c4161c', .018, .01, .018, -.02, .33, .14, head).rotation.x = Math.PI/2; }
+  if (hat && hat[0] === 'beanie') { const b = part(capPart(.5, 0), hat[1], hx*1.15, hy*1.15, hz*1.15, 0, .23, 0, head); b.rotation.x = -.15; part(frustG(1, 1), hat[1], hx*1.17, .04, hz*1.17, 0, .25, -.01, head); }
+  if (!sp && look.cap === 'mst') { const c = part(capPart(.5, 0), '#d81f26', hx*1.12, hy*1.06, hz*1.12, 0, .23, 0, head); c.rotation.x = -.2; const br = box(.2, .012, .12, '#d81f26', 0, .3, .17, head); br.rotation.x = .15; box(.07, .035, .005, '#ffffff', 0, .33, .148, head); }
+  if (sp && sp.hold === 'fish') { const fish = new THREE.Group(); armL.userData.hand.add(fish); fish.position.set(0, -.05, .12); part(SPH2, '#9fb4c0', .07, .13, .32, 0, 0, 0, fish); const tl = part(geo('cone', () => new THREE.ConeGeometry(1, 1, 8)), '#7f97a4', .1, .14, .03, 0, 0, -.38, fish); tl.rotation.x = -Math.PI/2; part(SPH2, '#111', .015, .015, .01, .05, .04, .22, fish); }
+  if (sp && sp.hold === 'swords') for (const a of [armL, armR]) { const s = new THREE.Group(); a.userData.hand.add(s); s.position.set(0, -.04, .05); s.rotation.x = Math.PI/2.3; box(.03, .75, .012, '#d8dde3', 0, -.42, 0, s); box(.16, .03, .04, '#c08a3e', 0, -.05, 0, s); }
   if (ch.old) torso.rotation.x = .08;
   root.scale.setScalar((f ? .95 : 1)*((sp && sp.sc) || 1));
   const lod = mk(BOX, mat(topBase), .5, 1.75, .32, 0, .88, 0, root, false); lod.visible = false;
