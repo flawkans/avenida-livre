@@ -141,8 +141,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 .tile .k{position:absolute;top:5px;right:7px;font-size:9.5px;color:var(--mut)}
 .tile.on{border-color:var(--gold);background:#2c3a22}
 .tile .lock{position:absolute;top:5px;left:7px;font-size:10px;color:var(--gold)}
-#hp{position:absolute;left:50%;transform:translateX(-50%);top:64px;width:260px;padding:8px 12px;font-size:12px;font-weight:700}
-#hp .bar{height:8px}#hp .bar i{background:linear-gradient(90deg,#e0464a,#f08a4b)}
 #dmgFlash{position:absolute;inset:0;background:radial-gradient(circle,rgba(255,0,0,0) 40%,rgba(200,0,0,.45));pointer-events:none!important}
 #raceHud{position:absolute;left:50%;transform:translateX(-50%);top:64px;padding:10px 18px;text-align:center;font-weight:800}
 #raceHud .big{font-family:Anton,Impact;font-size:42px;font-weight:400}
@@ -166,10 +164,10 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 .crushcard .avatar{width:84px;height:84px;font-size:34px;margin:0 auto 10px}
 #joy{position:fixed;left:22px;bottom:22px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);z-index:12;touch-action:none}
 #joy i{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(236,210,126,.6)}
-#jumpBtn{position:fixed;right:22px;bottom:200px;width:64px;height:64px;border-radius:50%;background:rgba(236,210,126,.7);color:#1d1a0e;font-weight:800;z-index:12}
+#jumpBtn{position:fixed;right:22px;bottom:200px;width:64px;height:64px;border-radius:50%;background:rgba(236,210,126,.7);color:#1d1a0e;font-weight:800;z-index:12;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #loading{position:fixed;inset:0;z-index:100;background:#121a16;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-weight:700}
 @media (max-width:1100px){#bar{width:calc(100vw - 28px);min-width:0;bottom:180px}.rcol{width:220px}#chat{width:280px}#listen{right:250px}.ctrlhint{display:none}#pop{bottom:320px}}
-@media (max-width:800px){.lgrid{grid-template-columns:1fr}.teams{grid-template-columns:1fr}.pvwrap{height:320px}.chooser{max-height:none}.rcol{display:none}#mini{display:none}#chat{width:calc(100vw - 28px);left:14px;bottom:10px}#msgs{height:110px!important}#bar{bottom:64px;padding:4px}.bbtn{font-size:10.5px;padding:7px 2px;gap:3px}.brow2{margin-top:2px;padding-top:2px}.brow2 .bbtn{padding:5px 10px}#joy{bottom:200px;left:16px}#jumpBtn{bottom:215px;right:16px}#hp,#raceHud{top:100px}.info{top:52px;padding:7px 10px}.htop .hide-m{display:none}.ltop .hide-m{display:none}.ltop{padding:10px 12px;gap:6px}.ltop .logo>div{display:none}.lwrap{padding:14px 12px 30px}.card{padding:16px}.chars{grid-template-columns:repeat(2,1fr)}.htop{gap:5px;padding:8px}.htop .counts{display:none}.display{font-size:32px}#listen{right:14px;left:14px;width:auto;top:100px}#pop{bottom:180px;max-height:calc(100vh - 240px)}}
+@media (max-width:800px){.lgrid{grid-template-columns:1fr}.teams{grid-template-columns:1fr}.pvwrap{height:320px}.chooser{max-height:none}.rcol{display:none}#mini{display:none}#chat{width:calc(100vw - 28px);left:14px;bottom:10px}#msgs{height:110px!important}#bar{bottom:64px;padding:4px}.bbtn{font-size:10.5px;padding:7px 2px;gap:3px}.brow2{margin-top:2px;padding-top:2px}.brow2 .bbtn{padding:5px 10px}#joy{bottom:200px;left:16px}#jumpBtn{bottom:215px;right:16px}#raceHud{top:100px}.info{top:52px;padding:7px 10px}.htop .hide-m{display:none}.ltop .hide-m{display:none}.ltop{padding:10px 12px;gap:6px}.ltop .logo>div{display:none}.lwrap{padding:14px 12px 30px}.card{padding:16px}.chars{grid-template-columns:repeat(2,1fr)}.htop{gap:5px;padding:8px}.htop .counts{display:none}.display{font-size:32px}#listen{right:14px;left:14px;width:auto;top:100px}#pop{bottom:180px;max-height:calc(100vh - 240px)}}
 /* celular deitado (tela baixa e larga): HUD compacto nas bordas, centro livre para o jogo */
 @media (max-height:500px) and (orientation:landscape){
   .htop{padding:6px 10px;gap:5px}.htop .pill{height:30px;padding:0 10px;font-size:12px}.iconbtn{width:30px;height:30px;font-size:13px}.htop .hide-m,.htop .counts{display:none}
@@ -181,7 +179,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
   .bbtn{font-size:10px;padding:5px 2px;gap:2px}.bbtn svg{width:16px;height:16px}.brow2{margin-top:2px;padding-top:2px}.brow2 .bbtn{padding:4px 8px}
   #pop{top:44px;bottom:auto;left:150px;right:270px;width:auto;transform:none;max-height:calc(100vh - 150px)}
   #joy{left:14px;bottom:14px;width:110px;height:110px}#joy i{left:30px;top:30px}#jumpBtn{right:20px;bottom:64px;width:56px;height:56px}
-  #hp,#raceHud{top:44px}#listen{top:44px;left:auto;right:185px;width:260px;max-height:calc(100vh - 60px)}
+  #raceHud{top:44px}#listen{top:44px;left:auto;right:185px;width:260px;max-height:calc(100vh - 60px)}
   #modal{max-height:calc(100vh - 16px);padding:16px}
   .lgrid{grid-template-columns:1fr 1fr}.pvwrap{height:300px}.chooser{max-height:none;min-height:0}.display{font-size:30px}
 }
@@ -277,7 +275,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="panel rcard crush" data-act="crush"><b>💘 Crush</b><small>Exclusivo Premium · conheça</small></button>
   </div>
   <div id="dmgFlash" class="hidden"></div>
-  <div id="hp" class="panel hidden"><div style="display:flex;justify-content:space-between"><span>❤ Vida</span><span id="hpTxt">100</span></div><div class="bar"><i id="hpBar" style="width:100%"></i></div></div>
   <div id="raceHud" class="panel hidden"></div>
   <div id="listen" class="panel hidden"></div>
   <div id="chat" class="panel">
@@ -1719,7 +1716,7 @@ function togglePvp(force) {   // "modo luta": arma na mão, Espaço ataca
   const on = typeof force === 'boolean' ? force : !P.pvp;
   if (on && P.veh) dismount(true);
   if (!owns('weapon', WEAPON[P.weapon])) P.weapon = 'soco';
-  P.pvp = on; rebuildPlayer(); updateHP(); refreshPop(); fightButtons();
+  P.pvp = on; rebuildPlayer(); refreshPop(); fightButtons();
   toast(on ? `${WEAPON[P.weapon].em} Modo luta · ${WEAPON[P.weapon].name} · Espaço ataca. Só times diferentes se machucam.` : 'Modo luta desligado');
 }
 function setWeapon(id) {
@@ -1730,7 +1727,8 @@ function fightButtons() { const jb = $('#jumpBtn'); if (jb) jb.textContent = P.p
 function attack() {
   if (P.atk > 0 || P.dead || P.veh || P.ko > 0) return;
   let w = WEAPON[P.weapon] || WEAPONS[0]; if (!owns('weapon', w)) w = WEAPONS[0];
-  P.atk = 1;
+  if (T - (P.atkT || -9) < w.cd) return;   // mesmo ritmo que o servidor aceita
+  P.atk = 1; P.atkT = T;
   if (w.ranged) return shoot(w);
   sfx('swing');
   setTimeout(() => {
@@ -1789,8 +1787,33 @@ function hurtByBot(b, w) {   // online quem tira a vida é o servidor; offline �
   if (P.hp <= 0) enterDead(KNOCK_S, b.nick);
 }
 const shots = [];
+/* ---- mira: pistola e paintball travam no inimigo mais perto à sua frente (marcado com a mira vermelha) ---- */
+function aimTarget(w) {
+  const fx = Math.sin(P.h), fz = Math.cos(P.h); let best = null, bs = 1e9;
+  const test = (o, x, z) => {
+    const dx = x - P.pos.x, dz = z - P.pos.z, d = Math.hypot(dx, dz); if (d < .5 || d > w.reach) return;
+    const cos = (dx*fx + dz*fz)/d; if (cos < .64) return;   // até uns 50° para cada lado
+    const s = d*(2 - cos); if (s < bs) { bs = s; best = o; }
+  };
+  for (const b of bots) if (b.ko <= 0 && !b.seat && enemyTeam(b.team)) test(b, b.pos.x, b.pos.z);
+  for (const r of remotes.values()) if (!r.dead && enemyTeam(r.team)) test(r, r.pos.x, r.pos.z);
+  return best;
+}
+const AIM = {s:null, t:null};
+function updateAim() {
+  const w = WEAPON[P.weapon], on = G.mode === 'play' && P.pvp && !P.dead && w && w.ranged && owns('weapon', w);
+  AIM.t = on ? aimTarget(w) : null;
+  if (!AIM.s) {
+    const tex = canvasTex(64, 64, x => { x.clearRect(0, 0, 64, 64); x.strokeStyle = '#ff2b3b'; x.lineWidth = 5; x.beginPath(); x.arc(32, 32, 20, 0, 6.29); x.stroke(); x.beginPath(); x.moveTo(32, 2); x.lineTo(32, 18); x.moveTo(32, 46); x.lineTo(32, 62); x.moveTo(2, 32); x.lineTo(18, 32); x.moveTo(46, 32); x.lineTo(62, 32); x.stroke(); });
+    AIM.s = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, depthWrite:false, depthTest:false, transparent:true})); AIM.s.scale.set(.9, .9, 1); AIM.s.renderOrder = 9; scene.add(AIM.s);
+  }
+  AIM.s.visible = !!AIM.t;
+  if (AIM.t) { AIM.s.position.set(AIM.t.pos.x, 1.3, AIM.t.pos.z); AIM.s.material.rotation = T*2; }
+}
 function shoot(w) {
   sfx('shot');
+  const t = aimTarget(w);
+  if (t) P.h = Math.atan2(t.pos.x - P.pos.x, t.pos.z - P.pos.z);   // vira para o alvo da mira
   const dx = Math.sin(P.h), dz = Math.cos(P.h), x = P.pos.x + dx*.7, y = P.pos.y + 1.45, z = P.pos.z + dz*.7;
   const color = w.paint ? pick(SPRAYC.filter(c => c !== '#111111')) : w.color;
   spawnShot(x, y, z, dx, dz, w, color, true);
@@ -1828,7 +1851,7 @@ function updateShots(dt) {
 /* ---- vida e queda: quem zera a vida só é derrubado e levanta sozinho em 3 s (o servidor decide) ---- */
 const KNOCK_S = 3;
 function onDamage(m) {
-  P.hp = m.hp; P.lastHit = T; sfx('hit'); updateHP();
+  P.hp = m.hp; P.lastHit = T; sfx('hit');
   burst(P.pos.x, 1.4, P.pos.z, m.w === 'paintball' ? '#ff3b6b' : '#ffdd55', 14);
   const fl = $('#dmgFlash'); fl.classList.remove('hidden'); clearTimeout(G.flashT); G.flashT = setTimeout(() => fl.classList.add('hidden'), 180);
 }
@@ -1838,16 +1861,13 @@ function enterDead(wait, by) {
   P.dead = true; P.hp = 0; P.deadUntil = performance.now()/1000 + Math.min(wait || KNOCK_S, KNOCK_S); P.moveTarget = null; P.emote = null; P.seat = null; closePop();
   if (P.veh) dismount(true);
   if (!was) toast(`💥 ${by ? by + ' te derrubou!' : 'Você foi derrubado!'} Levantando…`);
-  updateHP();
 }
 function checkGetUp() {   // o servidor manda levantar; se a mensagem atrasar (ou sem servidor), levanta aqui mesmo
   if (P.dead && performance.now()/1000 > P.deadUntil + (NET.on ? 1.5 : 0)) leaveDead();
 }
 function leaveDead() {
   P.dead = false; P.hp = 100; P.safeUntil = T + 6; P.c.root.rotation.x = 0; P.c.root.position.y = 0;   // levanta no mesmo lugar
-  updateHP();
 }
-function updateHP() { const show = P.pvp || P.hp < 100 || P.dead; $('#hp').classList.toggle('hidden', !show || G.mode !== 'play'); $('#hpBar').style.width = Math.max(0, P.hp) + '%'; $('#hpTxt').textContent = Math.ceil(Math.max(0, P.hp)) + ' / 100'; }
 
 /* ================= ATUALIZAÇÃO DO JOGADOR ================= */
 function isTyping() { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); }
@@ -1857,13 +1877,14 @@ function updatePlayer(dt) {
   const c = P.c;
   if (P.ko > 0) {
     P.ko -= dt; c.root.rotation.x = -Math.min(1, (4 - P.ko)*3)*Math.PI/2*.95; c.root.position.y = .15;
-    if (P.ko <= 0) { c.root.rotation.x = 0; spawnPlayer(); updateHP(); }
+    if (P.ko <= 0) { c.root.rotation.x = 0; spawnPlayer(); }
     return;
   }
   if (P.dead) { c.root.rotation.x = -Math.PI/2*.95; c.root.position.y = .15; return; }   // derrubado: no chão até levantar
-  if (T - P.lastHit > 8 && P.hp < 100) { P.hp = Math.min(100, P.hp + 4*dt); updateHP(); }   // mesmo ritmo do servidor
+  if (T - P.lastHit > 8 && P.hp < 100) { P.hp = Math.min(100, P.hp + 4*dt); }   // mesmo ritmo do servidor
   if (!prof.premium && prof.sprayLeft < SPRAY_FREE) { P.sprayT += dt; if (P.sprayT > 60) { P.sprayT = 0; prof.sprayLeft++; if (G.pop === 'spray') refreshPop(); } }
   if (P.atk > 0) P.atk -= dt*3;
+  if (G.atkHeld && P.pvp && P.atk <= 0) attack();   // botão de ataque segurado no celular
   const typing = isTyping();
   let f = 0, s = 0;
   if (!typing) { f = (K.w || K.arrowup ? 1 : 0) - (K.s || K.arrowdown ? 1 : 0); s = (K.d || K.arrowright ? 1 : 0) - (K.a || K.arrowleft ? 1 : 0); }
@@ -2024,8 +2045,11 @@ if (isTouch) {
   const j = $('#joy'), knob = j.querySelector('i'); let jid = null, cx = 0, cy = 0;
   j.addEventListener('pointerdown', e => { jid = e.pointerId; j.setPointerCapture(jid); const r = j.getBoundingClientRect(); cx = r.left + r.width/2; cy = r.top + r.height/2; });
   j.addEventListener('pointermove', e => { if (e.pointerId !== jid) return; let dx = e.clientX - cx, dy = e.clientY - cy; const d = Math.hypot(dx, dy), m = 45; if (d > m) { dx *= m/d; dy *= m/d; } joy.x = dx/m; joy.y = dy/m; knob.style.transform = `translate(${dx}px,${dy}px)`; });
-  const end = () => { jid = null; joy.x = joy.y = 0; knob.style.transform = ''; }; j.addEventListener('pointerup', end); j.addEventListener('pointercancel', end);
-  $('#jumpBtn').addEventListener('click', () => { if (P.pvp) attack(); else jump(); });
+  const end = e => { if (e.pointerId !== jid) return; jid = null; joy.x = joy.y = 0; knob.style.transform = ''; }; j.addEventListener('pointerup', end); j.addEventListener('pointercancel', end);
+  // pointerdown (e não click) para funcionar com outro dedo já no joystick; segurando, continua atacando
+  const jb = $('#jumpBtn'); let bid = null;
+  jb.addEventListener('pointerdown', e => { e.preventDefault(); bid = e.pointerId; jb.setPointerCapture(bid); if (P.pvp) { G.atkHeld = true; attack(); } else jump(); });
+  const bend = e => { if (e.pointerId === bid) { bid = null; G.atkHeld = false; } }; jb.addEventListener('pointerup', bend); jb.addEventListener('pointercancel', bend);
 }
 
 /* ================= SPRAY (ação) ================= */
@@ -2335,7 +2359,7 @@ function startWatch() {
 function toLobby() {
   P.dead = false;
   netSend({t:'leave'});
-  if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden'); $('#hp').classList.add('hidden');
+  if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden');
   G.mode = 'lobby'; G.aerial = false; G.sprayMode = false; closePop(); $('#hud').classList.add('hidden'); $('#lobby').classList.remove('hidden'); $('#joy').classList.add('hidden'); $('#jumpBtn').classList.add('hidden');
   renderTeams(); renderChars(); renderCustom($('#lobbyCustom')); refreshPreview();
 }
@@ -2784,7 +2808,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last)/1000); last = now; T += dt;
   if (G.mode === 'play') updatePlayer(dt);
-  updateBots(dt); updateRemotes(dt); updateShots(dt); netTick(dt); updateTrios(dt); updateRace(dt); updateDebates(dt);
+  updateBots(dt); updateRemotes(dt); updateShots(dt); updateAim(); netTick(dt); updateTrios(dt); updateRace(dt); updateDebates(dt);
   for (let i = bubbles.length - 1; i >= 0; i--) { const e = bubbles[i]; if (!e.bubble) { bubbles.splice(i, 1); continue; } e.bubble.t -= dt; if (e.bubble.t <= 0) { disposeSprite(e.bubble.s); e.bubble = null; bubbles.splice(i, 1); } }
   for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.t -= dt; const a = p.p.geometry.attributes.position; p.vel.forEach((v, j) => { v.y -= 6*dt; a.array[j*3] += v.x*dt; a.array[j*3+1] += v.y*dt; a.array[j*3+2] += v.z*dt; }); a.needsUpdate = true; p.p.material.opacity = p.t/.7; if (p.t <= 0) { scene.remove(p.p); p.p.geometry.dispose(); p.p.material.dispose(); particles.splice(i, 1); } }
   if (markerMesh && markerMesh.visible) { markerMesh.userData.t -= dt; markerMesh.scale.setScalar(.5 + (1.2 - markerMesh.userData.t)*.4); markerMesh.scale.z = .2; if (markerMesh.userData.t <= 0 || !P.moveTarget) markerMesh.visible = false; }
