@@ -454,6 +454,8 @@ def handle(c, m):
                                'amount': 0, 'voice': voice, 'prem': True}, exclude=c)
     elif t == 'hit' and c.p:
         handle_hit(c, m, now)
+    elif t == 'botHit' and c.p:
+        handle_bot_hit(c, m, now)
     elif t == 'shot' and c.p:   # só o efeito visual do tiro para os outros; o dano vem pelo 'hit'
         w = m.get('w')
         if w not in ('pistola', 'paintball') or not is_premium(c) or c.dead_until or now - c.weapon_t.get('shot', 0) < WEAPONS[w][2] * .8:
@@ -492,18 +494,35 @@ def handle_hit(c, m, now):
     if (target.p['x'] - c.p['x']) ** 2 + (target.p['z'] - c.p['z']) ** 2 > (reach + 1.5) ** 2:
         return
     c.weapon_t[w] = now
+    if hurt(target, dmg, w, c.p['nick'], now, c.id):
+        c.send({'t': 'kill', 'nick': target.p['nick']})
+
+
+def handle_bot_hit(c, m, now):
+    """Os bots rodam no navegador de cada jogador, então quem avisa do golpe é o próprio atingido.
+    Ele só consegue se machucar (nunca outra pessoa), e no máximo no ritmo de uma arma Premium."""
+    w = m.get('w') if m.get('w') in WEAPONS else 'soco'
+    if c.dead_until or now - c.weapon_t.get('bot', 0) < .3:
+        return
+    c.weapon_t['bot'] = now
+    hurt(c, WEAPONS[w][0], w, clean_text(m.get('by'), 16) or 'um bot', now)
+
+
+def hurt(target, dmg, w, by, now, from_id=None):
+    """Tira vida de um jogador; se zerar, ele cai (sem Premium só revive depois de 5 minutos)."""
     target.hurt_t = now
     target.hp = max(0, target.hp - dmg)
-    target.send({'t': 'dmg', 'from': c.id, 'nick': c.p['nick'], 'amount': dmg, 'hp': target.hp, 'w': w})
-    if target.hp <= 0:
-        wait = 0 if is_premium(target) else RESPAWN_FREE_S
-        target.dead_until = time.time() + wait if wait else time.time()
-        if target.uid and wait:
-            _deaths[target.uid] = target.dead_until
-        target.p['a'] = 'ko'
-        target.send({'t': 'dead', 'by': c.p['nick'], 'wait': wait, 'premium': is_premium(target)})
-        c.send({'t': 'kill', 'nick': target.p['nick']})
-        broadcast(c.room, {'t': 'died', 'id': target.id, 'by': c.p['nick'], 'nick': target.p['nick'], 'w': w})
+    target.send({'t': 'dmg', 'from': from_id, 'nick': by, 'amount': dmg, 'hp': target.hp, 'w': w})
+    if target.hp > 0:
+        return False
+    wait = 0 if is_premium(target) else RESPAWN_FREE_S
+    target.dead_until = time.time() + wait if wait else time.time()
+    if target.uid and wait:
+        _deaths[target.uid] = target.dead_until
+    target.p['a'] = 'ko'
+    target.send({'t': 'dead', 'by': by, 'wait': wait, 'premium': is_premium(target)})
+    broadcast(target.room, {'t': 'died', 'id': target.id, 'by': by, 'nick': target.p['nick'], 'w': w})
+    return True
 
 
 def handle_ad(c, m):

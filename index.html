@@ -1399,7 +1399,7 @@ function rebuildPlayer() {
 }
 function addPvpRing(c) { const r = mk(TOR, new THREE.MeshBasicMaterial({color:'#ff3344'}), .55, .55, .55, 0, .05, 0, c.root, false); r.rotation.x = Math.PI/2; r.scale.z = .3; c.pvpRing = r; }
 function spawnPlayer() {
-  const s = world.spawn; P.pos.set(s.x + rand(-4, 4), 0, s.z + rand(-3, 3)); P.h = 0; P.vy = 0; P.hp = 100; P.ko = 0;
+  const s = world.spawn; P.pos.set(s.x + rand(-4, 4), 0, s.z + rand(-3, 3)); P.h = 0; P.vy = 0; P.hp = 100; P.ko = 0; P.safeUntil = T + 10;   // 10 s sem ser alvo dos bots ao nascer
   if (P.veh) dismount(true);
   rebuildPlayer(); P.c.root.rotation.set(0, 0, 0);
 }
@@ -1432,9 +1432,9 @@ function dismount(silent) {
 /* ================= BOTS ================= */
 const bots = [];
 function botNick() { return pick(NICK_A) + (Math.random() < .7 ? pick(NICK_B) : randi(10, 99)); }
-function randomLook(team) {
+function randomLook(team, spec=.05) {
   const base = CHARS.filter(c => c.teams && c.teams.includes(team.id)), sps = CHARS.filter(c => c.special);
-  const ch = Math.random() < .05 ? pick(sps).id : (team.id === 'va' && Math.random() < .18 ? 'tiozao' : pick(base).id);
+  const ch = Math.random() < spec ? pick(sps).id : (team.id === 'va' && Math.random() < .18 ? 'tiozao' : pick(base).id);
   const f = CHAR[ch].g === 'f', canBeard = ['homem', 'tiozao', 'velho'].includes(ch);
   return {team:team.id, char:ch, shirt:pick(SHIRTS.filter(s => s.teams.includes(team.id))).id, skin:randi(0, 5), hairColor:Math.random() < .5 ? 0 : randi(1, 5), beard:canBeard && Math.random() < .5 ? randi(1, 4) : 0, cap:team.id === 'vm' && Math.random() < .25 ? 'mst' : 'none', pants:pick([team.pants, '#2d3f66', '#2a2a33', '#4a4a52', '#5b4a3a', '#1f2f4f']), shoe:pick(['#f2f2f2', '#222', '#8a5a35', '#d22'])};
 }
@@ -1445,20 +1445,21 @@ function randomHeld(team) {
   if (r < .82) return {type:'obj', id:pick(OBJS).id};
   return null;
 }
-function weightedTeam() { const tot = TEAMS.reduce((s, t) => s + t.base, 0); let r = Math.random()*tot; for (const t of TEAMS) { r -= t.base; if (r <= 0) return t; } return TEAMS[0]; }
+// Os bots são fixos: 10 de cada partido, todos Premium e armados (bastão, espada, pistola ou paintball).
+const BOTS_PER_TEAM = 10, BOT_WEAPONS = ['bastao', 'espada', 'pistola', 'paintball'];
 function makeBot(team, opts={}) {
-  const look = randomLook(team); const c = buildCharacter(look); setHeld(c, opts.held !== undefined ? opts.held : randomHeld(team), team);
+  const weapon = opts.weapon || pick(BOT_WEAPONS);
+  const look = randomLook(team, .5); const c = buildCharacter(look); setHeld(c, {type:'obj', id:'w_' + weapon}, team);
   const zp = randomZonePoint();
-  const b = {c, team, nick:opts.nick || botNick(), pos:new V3(zp.x, 0, zp.zz), zone:zp.z, h:rand(0, 6.28), target:null, state:'idle', timer:rand(0, 5), speed:rand(1.1, 1.7), pvp:Math.random() < .12, hp:100, ko:0, atkCd:0, atk:0, tag:null, bubble:null, follow:0, seat:null, debate:null, premium:Math.random() < .12};
+  const b = {c, team, nick:opts.nick || botNick(), pos:new V3(zp.x, 0, zp.zz), zone:zp.z, h:rand(0, 6.28), target:null, state:'idle', timer:rand(0, 5), speed:rand(1.1, 1.7), pvp:true, weapon, foe:null, scan:rand(0, .6), aggro:0, hp:100, ko:0, atkCd:rand(0, 2), atk:0, tag:null, bubble:null, follow:0, seat:null, debate:null, premium:true};
   b.tag = labelSprite((b.premium ? '♛ ' : '') + b.nick, {dot:team.c1, fs:24}); b.tag.position.y = c.raise ? 3.75 : 2.1; c.root.add(b.tag);
   c.root.position.copy(b.pos); scene.add(c.root);
   return b;
 }
-function botCount() { if (prof.settings.bots === false) return 0; return {baixa:80, media:150, alta:240}[prof.settings.quality] || 150; }
 function spawnBots() {
   for (const b of bots) removeBot(b); bots.length = 0;
-  const n = botCount(); for (let i = 0; i < n; i++) bots.push(makeBot(weightedTeam()));
-  placeDebaters();
+  if (prof.settings.bots === false) return;
+  for (const t of TEAMS) for (let i = 0; i < BOTS_PER_TEAM; i++) bots.push(makeBot(t));
 }
 function removeBot(b) { disposeSprite(b.tag); if (b.bubble) disposeSprite(b.bubble.s); b.c.root.parent && b.c.root.parent.remove(b.c.root); if (b.ring) b.ring = null; }
 const _v = new V3(), _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
@@ -1478,13 +1479,15 @@ function updateBots(dt) {
     let mvx = 0, mvz = 0, sp = b.speed;
     b.atkCd -= dt; if (b.atk > 0) b.atk -= dt*3;
     const dP = pAlive ? Math.hypot(P.pos.x - b.pos.x, P.pos.z - b.pos.z) : 999;
+    b.aggro -= dt; b.scan -= dt; if (b.scan <= 0) { b.scan = rand(.4, .8); b.foe = botFoe(b, pAlive); }
+    const foe = b.foe && (b.foe === P ? pAlive && !P.dead : b.foe.ko <= 0) ? b.foe : null;
     if (b.follow > 0 && pAlive) {
       b.follow -= dt; if (dP > 2.5) { mvx = (P.pos.x - b.pos.x)/dP; mvz = (P.pos.z - b.pos.z)/dP; sp = dP > 8 ? 4 : 2; b.state = 'walk'; } else b.state = 'idle';
       if (b.follow <= 0 && b.heart) { disposeSprite(b.heart); b.heart = null; }
-    } else if (b.fleeT > 0 && pAlive) {   // apanhou: sai correndo de quem bateu
-      b.fleeT -= dt; const d = Math.max(dP, .1); mvx = (b.pos.x - P.pos.x)/d; mvz = (b.pos.z - P.pos.z)/d; sp = 5;
-      const z = b.zone; if (b.pos.x < z.x0 || b.pos.x > z.x1) mvx = 0; if (b.pos.z < z.z0 || b.pos.z > z.z1) mvz = 0;
-      b.state = 'walk';
+    } else if (foe) {   // luta: corre até o inimigo e ataca quando estiver no alcance da arma
+      const w = WEAPON[b.weapon], dx = foe.pos.x - b.pos.x, dz = foe.pos.z - b.pos.z, d = Math.max(Math.hypot(dx, dz), .1);
+      if (d > (w.ranged ? 16 : w.reach*.85)) { mvx = dx/d; mvz = dz/d; sp = 3.6; b.state = 'walk'; }
+      else { b.h = Math.atan2(dx, dz); b.state = 'idle'; if (b.atkCd <= 0) botAttack(b, w, foe, dx/d, dz/d); }
     } else {
       if (b.state === 'walk' && b.target) {
         const dx = b.target.x - b.pos.x, dz = b.target.z - b.pos.z, d = Math.hypot(dx, dz);
@@ -1495,7 +1498,7 @@ function updateBots(dt) {
         if (b.timer <= 0) { const z = b.zone; b.target = new V3(clamp(b.pos.x + rand(-25, 25), z.x0, z.x1), 0, clamp(b.pos.z + rand(-10, 10), z.z0, z.z1)); b.state = 'walk'; }
       }
     }
-    if (mvx || mvz) { b.pos.x += mvx*sp*dt; b.pos.z += mvz*sp*dt; b.h = lerpAng(b.h, Math.atan2(mvx, mvz), 1 - Math.exp(-8*dt)); }
+    if (mvx || mvz) { b.pos.x += mvx*sp*dt; b.pos.z += mvz*sp*dt; b.h = lerpAng(b.h, Math.atan2(mvx, mvz), 1 - Math.exp(-8*dt)); if (foe) collide(b.pos, .35); }
     c.root.position.copy(b.pos); c.root.rotation.y = b.h;
     const visible = _frustum.containsPoint(_v.set(b.pos.x, 1, b.pos.z)); if (visible) onScreen++;
     const far = lodAndTag(b, camPos);
@@ -1653,16 +1656,6 @@ function makeTable([x, z], topic, hostNick) {
   const sign = labelSprite('🎙 ' + topic[0], {fs:26, h:.55, bg:'rgba(20,60,36,.92)'}); sign.position.set(0, 3.2, 0); g.add(sign);
   return {g, x, z, topic, seats, host:null, guest:null, listeners:randi(8, 40), queue:randi(0, 3), votesA:randi(0, 5), votesB:randi(0, 5), t:rand(0, 120), next:rand(2, 5), turn:0, log:[], mine:!!hostNick, hostNick};
 }
-function placeDebaters() {
-  for (const d of debates) {
-    for (const k of ['host', 'guest']) {
-      if (d[k] === 'player') continue;
-      const b = bots.find(b => !b.seat && !b.debate && b.ko <= 0 && !b.follow);
-      if (!b) continue; b.seat = d.seats[k === 'host' ? 0 : 1]; b.debate = d; d[k] = b;
-      if (b.c.heldObj && b.c.raise) setHeld(b.c, null);
-    }
-  }
-}
 const DEB_LINES = ['Eu defendo {A}, e explico por quê.', 'Mas pensa no lado de quem prefere {B}...', 'Os números mostram outra coisa!', 'Concordo em parte, mas...', 'Pergunta pro público aqui!', 'Com todo respeito, discordo.', 'Isso é questão de bom senso.', 'Me deixa terminar, por favor 😅', 'Na minha cidade é {A}, sempre foi.', 'Vamos votar então! 🗳', 'Ponto pra você nessa.', '{B} é tradição, gente!'];
 function debLine(d) { return pick(DEB_LINES).replace('{A}', d.topic[1]).replace('{B}', d.topic[2]); }
 function updateDebates(dt) {
@@ -1757,9 +1750,45 @@ function attack() {
   }, 160);
 }
 function hitBot(b, w, fx, fz, color) {
-  b.hp -= w.dmg; b.fleeT = 3; sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, color || '#ffdd55', 14);
+  b.hp -= w.dmg; b.aggro = 6; b.foe = P; sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, color || '#ffdd55', 14);   // apanhou: vem pra cima de você
   if (fx !== undefined) { b.pos.x += fx*.8; b.pos.z += fz*.8; }
-  if (b.hp <= 0) { b.ko = 8; b.fleeT = 0; prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Você derrubou ${b.nick}! (${prof.kos})`); say(b, pick(['Aiii! 😵', 'Essa doeu!', 'Volto já!'])); }
+  if (b.hp <= 0) { b.ko = 8; b.foe = null; prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Você derrubou ${b.nick}! (${prof.kos})`); say(b, pick(['Aiii! 😵', 'Essa doeu!', 'Volto já!'])); }
+}
+/* ---- bots armados: caçam o inimigo mais perto (bot de outro partido ou você) ---- */
+const nearCam = (x, z) => Math.hypot(cam.focus.x - x, cam.focus.z - z) < 28;
+function botFoe(b, pAlive) {
+  const meOk = pAlive && !P.dead && b.team.id !== prof.team && T > (P.safeUntil || 0);
+  if (meOk && b.aggro > 0) return P;
+  let best = null, bd = 35;
+  if (meOk) { const d = Math.hypot(P.pos.x - b.pos.x, P.pos.z - b.pos.z); if (d < bd) { best = P; bd = d; } }
+  for (const o of bots) {
+    if (o === b || o.ko > 0 || o.seat || o.team === b.team) continue;
+    const d = Math.hypot(o.pos.x - b.pos.x, o.pos.z - b.pos.z); if (d < bd) { best = o; bd = d; }
+  }
+  return best;
+}
+function botAttack(b, w, foe, fx, fz) {
+  b.atk = 1; b.atkCd = w.cd*rand(2.2, 3.5);
+  const loud = nearCam(b.pos.x, b.pos.z);
+  if (w.ranged) {
+    const a = Math.atan2(fx, fz) + rand(-.07, .07), dx = Math.sin(a), dz = Math.cos(a);
+    spawnShot(b.pos.x + dx*.7, 1.45, b.pos.z + dz*.7, dx, dz, w, w.paint ? pick(SPRAYC.filter(c => c !== '#111111')) : w.color, false, b);
+    if (loud) sfx('shot'); return;
+  }
+  if (loud) sfx('swing');
+  setTimeout(() => { if (b.ko <= 0 && Math.hypot(foe.pos.x - b.pos.x, foe.pos.z - b.pos.z) <= w.reach + .5) botStrike(b, w, foe); }, 160);
+}
+function botStrike(b, w, foe, color) {
+  if (foe === P) return hurtByBot(b, w);
+  if (foe.ko > 0) return;
+  foe.hp -= w.dmg; burst(foe.pos.x, 1.4, foe.pos.z, color || '#ffdd55', 12); if (nearCam(foe.pos.x, foe.pos.z)) sfx('hit');
+  if (foe.hp <= 0) { foe.ko = 8; foe.foe = null; if (Math.random() < .35) say(b, pick(['Toma! 💥', 'Aqui não! 😤', 'Próximo!', 'Volta pro seu bloco!'])); }
+}
+function hurtByBot(b, w) {   // online quem tira a vida é o servidor; offline é aqui mesmo
+  if (P.dead || G.mode !== 'play') return;
+  if (NET.on) return netSend({t:'botHit', w:w.id, by:b.nick});
+  P.hp = Math.max(0, P.hp - w.dmg); onDamage({hp:P.hp, w:w.id});
+  if (P.hp <= 0) enterDead(prof.premium ? 0 : 300, b.nick);
 }
 const shots = [];
 function shoot(w) {
@@ -1769,18 +1798,22 @@ function shoot(w) {
   spawnShot(x, y, z, dx, dz, w, color, true);
   netSend({t:'shot', w:w.id, x:+x.toFixed(2), y:+y.toFixed(2), z:+z.toFixed(2), dx:+dx.toFixed(3), dz:+dz.toFixed(3), c:color});
 }
-function spawnShot(x, y, z, dx, dz, w, color, mine) {
+function spawnShot(x, y, z, dx, dz, w, color, mine, bot) {
   if (!w) return;
   const r = w.paint ? .09 : .05, m = mk(SPH, new THREE.MeshBasicMaterial({color}), r, r, w.paint ? r : .16, x, y, z, scene, false);
   m.rotation.y = Math.atan2(dx, dz);
-  shots.push({m, x, y, z, dx, dz, w, color, mine, left:w.reach});
+  shots.push({m, x, y, z, dx, dz, w, color, mine, bot, left:w.reach});
 }
 function updateShots(dt) {
   for (let i = shots.length - 1; i >= 0; i--) {
     const s = shots[i], step = 45*dt/3; let hit = false;
     for (let k = 0; k < 3 && !hit; k++) {
       s.x += s.dx*step; s.z += s.dz*step; s.left -= step;
-      if (s.mine) {
+      if (s.bot) {   // tiro de bot: acerta você ou um bot de outro partido
+        const sb = s.bot;
+        if (sb.team.id !== prof.team && G.mode === 'play' && P.c && !P.dead && Math.hypot(P.pos.x - s.x, P.pos.z - s.z) < .6) { hurtByBot(sb, s.w); hit = true; }
+        if (!hit) for (const o of bots) if (o !== sb && o.ko <= 0 && !o.seat && o.team !== sb.team && Math.hypot(o.pos.x - s.x, o.pos.z - s.z) < .6) { botStrike(sb, s.w, o, s.color); hit = true; break; }
+      } else if (s.mine) {
         for (const r of remotes.values()) if (!r.dead && enemyTeam(r.team) && Math.hypot(r.pos.x - s.x, r.pos.z - s.z) < .6) { netSend({t:'hit', id:r.id, w:s.w.id}); sfx('hit'); hit = true; break; }
         if (!hit) for (const b of bots) if (b.ko <= 0 && !b.seat && enemyTeam(b.team) && Math.hypot(b.pos.x - s.x, b.pos.z - s.z) < .6) { hitBot(b, s.w, undefined, undefined, s.color); hit = true; break; }
       } else if (P.c && !P.dead && Math.hypot(P.pos.x - s.x, P.pos.z - s.z) < .6) hit = true;
@@ -1788,7 +1821,7 @@ function updateShots(dt) {
     }
     s.m.position.set(s.x, s.y, s.z);
     if (hit || s.left <= 0) {
-      if (s.w.paint) addSpray(s.x, s.z, 'splat', s.color, '', TEAM[prof.team], true);
+      if (s.w.paint && (!s.bot || hit)) addSpray(s.x, s.z, 'splat', s.color, '', s.bot ? s.bot.team : TEAM[prof.team], true);
       if (hit) burst(s.x, s.y, s.z, s.color, 10);
       scene.remove(s.m); s.m.material.dispose(); shots.splice(i, 1);
     }
@@ -2295,11 +2328,11 @@ function startPlay() {
   spawnPlayer(); cam.yaw = Math.PI; cam.pitch = .38; cam.dist = 9;
   if (isTouch) { $('#joy').classList.remove('hidden'); $('#jumpBtn').classList.remove('hidden'); }
   pushChat({kind:'sys', text:`Você entrou na ${world.def.name} como ${prof.nick}. Seja gentil 💛`});
-  $('#infoSub').textContent = 'Jogando como ' + prof.nick; canvas.focus(); updateMissionCard();
+  $('.info').classList.add('hidden'); canvas.focus(); updateMissionCard();   // jogando: sem o quadro de contagem
   netHello();
 }
 function startWatch() {
-  G.mode = 'watch'; $('#lobby').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#bar').classList.add('hidden'); $('#ctrlHint').classList.add('hidden');
+  G.mode = 'watch'; $('.info').classList.remove('hidden'); $('#lobby').classList.add('hidden'); $('#hud').classList.remove('hidden'); $('#bar').classList.add('hidden'); $('#ctrlHint').classList.add('hidden');
   $('#chatIn').disabled = true; $('#chatIn').placeholder = 'Entre no jogo para conversar';
   cam.aTarget.set(world.lobbyCam.x, 0, world.lobbyCam.z); cam.aH = 90;
   pushChat({kind:'sys', text:'Você está assistindo do alto. Arraste para mover, roda do mouse para zoom, Q para girar.'});
