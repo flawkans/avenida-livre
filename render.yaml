@@ -14,3 +14,10 @@ services:
         value: https://zaluvwahhzqnvpuaapua.supabase.co
       - key: SUPABASE_ANON_KEY
         value: sb_publishable_zGNk6rop0MNTnpxzVPgjtA_mPXcAotA
+      # pagamento (Cakto): valores SECRETOS, preenchidos só no painel do Render (Environment), nunca aqui
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: CAKTO_SECRET
+        sync: false
+      - key: CAKTO_PRODUCT_ID
+        sync: false

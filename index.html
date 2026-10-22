@@ -143,6 +143,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
 .tile .lock{position:absolute;top:5px;left:7px;font-size:10px;color:var(--gold)}
 #hp{position:absolute;left:50%;transform:translateX(-50%);top:64px;width:260px;padding:8px 12px;font-size:12px;font-weight:700}
 #hp .bar{height:8px}#hp .bar i{background:linear-gradient(90deg,#e0464a,#f08a4b)}
+#death{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(340px,calc(100vw - 28px));padding:20px;text-align:center;z-index:5}
+#dmgFlash{position:absolute;inset:0;background:radial-gradient(circle,rgba(255,0,0,0) 40%,rgba(200,0,0,.45));pointer-events:none!important}
 #raceHud{position:absolute;left:50%;transform:translateX(-50%);top:64px;padding:10px 18px;text-align:center;font-weight:800}
 #raceHud .big{font-family:Anton,Impact;font-size:42px;font-weight:400}
 #listen{position:absolute;right:300px;top:62px;width:300px;padding:12px 14px;max-height:60vh;display:flex;flex-direction:column}
@@ -259,8 +261,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
   <div class="htop">
     <div class="logo"><svg width="28" height="28" viewBox="0 0 34 34"><path d="M6 30 12 4h5L11 30z M15 30 21 4h5l-6 26z M24 30 28 12h4l-4 18z" fill="#ecd27e"/></svg><div class="hide-m"><b>AVENIDA</b><small>LIVRE</small></div></div>
     <button class="pill gold" data-act="premium">♛ <span class="hide-m">Premium</span></button>
-    <button class="pill hide-m" data-act="passes">♜ Passes</button>
-    <button class="pill hide-m" data-act="superchat">$ Superchat</button>
+   <button class="pill hide-m" data-act="superchat">$ Superchat</button>
     <button class="pill" data-act="mapas">Mapas</button>
     <button class="pill green hide-m" data-act="anunciar">📺 Anunciar no jogo</button>
     <div class="sp"></div>
@@ -279,7 +280,9 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
     <button class="panel rcard green" data-act="debates"><b>Debates ao vivo · <span id="debCount">0</span></b><small>Ouça ou entre na fila</small></button>
     <button class="panel rcard crush" data-act="crush"><b>💘 Crush</b><small>Exclusivo Premium · conheça</small></button>
   </div>
-  <div id="hp" class="panel hidden"><div style="display:flex;justify-content:space-between"><span>⚔ PvP ativo</span><span id="hpTxt">100</span></div><div class="bar"><i id="hpBar" style="width:100%"></i></div></div>
+  <div id="death" class="panel hidden"></div>
+  <div id="dmgFlash" class="hidden"></div>
+  <div id="hp" class="panel hidden"><div style="display:flex;justify-content:space-between"><span>❤ Vida</span><span id="hpTxt">100</span></div><div class="bar"><i id="hpBar" style="width:100%"></i></div></div>
   <div id="raceHud" class="panel hidden"></div>
   <div id="listen" class="panel hidden"></div>
   <div id="chat" class="panel">
@@ -299,7 +302,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold2)}
       <button class="bbtn" data-pop="veiculos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 16h14M6 16l1.5-5h9L18 16M5 16v3h3v-3m8 0v3h3v-3"/><circle cx="8" cy="14" r=".6"/><circle cx="16" cy="14" r=".6"/></svg>Veículos</button>
       <button class="bbtn" data-pop="cartaz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4 4 7l2 4 2-1v10h8V10l2 1 2-4-4-3c-1 1.5-2.3 2-4 2s-3-.5-4-2z"/></svg>Cartaz / bandeira</button>
       <button class="bbtn" data-pop="spray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="9" width="7" height="12" rx="2"/><path d="M10 9V6h3v3M16 5h1M18 3h1M18 7h1"/></svg>Spray</button>
-      <button class="bbtn" data-pop="pvp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l9 9M4 4v3l8 8M4 4h3l8 8M20 4l-9 9M20 4v3l-3 3M20 4h-3l-3 3M7 17l-3 3M17 17l3 3"/></svg>PvP</button>
+      <button class="bbtn" data-pop="pvp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l9 9M4 4v3l8 8M4 4h3l8 8M20 4l-9 9M20 4v3l-3 3M20 4h-3l-3 3M7 17l-3 3M17 17l3 3"/></svg>Luta</button>
       <button class="bbtn" data-pop="anim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="4.5" r="2"/><path d="M12 7v7l-3 6M12 14l3 6M7 9l5 1 5-3"/></svg>Animações</button>
     </div>
     <div class="brow2"><button class="bbtn" data-pop="custom">👕 Customização</button><button class="bbtn" id="aerBtn">◈ Aéreo</button></div>
@@ -463,26 +466,21 @@ const VEH = [
   {id:'calango',  name:'Calango gigante',        em:'🦎', speed:9, price:200, r:1.4, cam:1.5, teams:['vm']},
   {id:'onca',     name:'Onça-pintada',           em:'🐆', speed:10, price:200, r:1.2, cam:1.4, teams:['pa']},
 ];
-const PREMIUM_PRICE = 10, PVP_PRICE = 5, SPRAY_REFILL = {price:5, charges:3}, SPRAY_FREE = 3;
+const PREMIUM_PRICE = 10, SPRAY_FREE = 3;
+// Link do checkout do Premium na Cakto (produto de pagamento único). O e-mail da conta vai junto para o Premium cair na conta certa.
+const CAKTO_CHECKOUT_URL = '';
 const forTeam = it => !it.teams || it.teams.includes(prof.team);
-const PREMIUM_BENEFITS = ['Moto e carro comum liberados', 'Caixa de som básica', 'Cartazes: uso ilimitado, até 20 salvos', 'Spray com recargas ilimitadas', 'Participar e criar mesas de debate', 'Crush liberado', 'Selo de verificado ♛'];
-const PASSES = [
-  {id:'premium', name:'Premium', price:PREMIUM_PRICE, tag:'Pagamento único', desc:'Para jogar sem limites básicos.', benefits:PREMIUM_BENEFITS},
-  {id:'personagens', name:'Passe Personagens', price:350, tag:'Seu elenco, sem limites', desc:'Todos os personagens. Inclusive os próximos.', benefits:['Todos os personagens atuais', 'Novos personagens incluídos', 'Premium incluído', 'Selo de verificado']},
-  {id:'garagem', name:'Passe Garagem & Objetos', price:300, tag:'A avenida é sua pista', desc:'Toda a garagem e cartazes ilimitados.', benefits:['Todos os veículos, montarias e sistemas de som', 'Todos os objetos de PvP', 'Cartazes: uso ilimitado, até 20 salvos', 'Premium incluído', 'Selo de verificado']},
-  {id:'total', name:'Passe Total', price:500, tag:'A experiência completa', desc:'Tudo para jogar. E tudo novo que chegar.', benefits:['Tudo dos passes Personagens e Garagem', 'Bandeiras e personalizações ilimitadas', 'Recursos e novidades do jogo incluídos', 'Premium incluído', 'Selo de verificado']},
-];
 const STAMPS = [{id:'tag',name:'Seu nome'},{id:'coracao',name:'Coração'},{id:'estrela',name:'Estrela'},{id:'paz',name:'Paz'},{id:'time',name:'Time'},{id:'smile',name:'Sorriso'}];
 const SPRAYC = ['#ff3b6b','#ffd400','#1ec8ff','#39e06b','#ffffff','#ff7a1a','#b04bff','#111111'];
 const MISSIONS = [
-  {id:'andar',   name:'Caminhe 300 m pela avenida', goal:300, u:'m', reward:{kind:'obj', id:'sorvete', name:'Sorvete'}},
-  {id:'chat',    name:'Mande 3 mensagens no chat', goal:3, reward:{kind:'flag', id:'brasilp', name:'Bandeira Brasil Premium'}},
-  {id:'dancar',  name:'Dance por 15 segundos', goal:15, u:'s', reward:{kind:'veh', id:'chopper', name:'Chopper'}},
-  {id:'cartaz',  name:'Levante um cartaz ou bandeira', goal:1, reward:{kind:'veh', id:'carreta', name:'Carreta'}},
-  {id:'spray',   name:'Pinte 3 sprays no chão', goal:3, reward:{kind:'flag', id:'sua', name:'Sua bandeira'}},
-  {id:'dirigir', name:'Percorra 500 m de veículo', goal:500, u:'m', reward:{kind:'veh', id:'roadster', name:'Tesla Roadster'}},
-  {id:'debate',  name:'Ouça um debate por 30 s', goal:30, u:'s', reward:{kind:'veh', id:'dirigivel', name:'Dirigível'}},
-  {id:'corrida', name:'Complete uma corrida', goal:1, reward:{kind:'char', id:'xandao', name:'Super Xandão'}},
+  {id:'andar',   name:'Caminhe 300 m pela avenida', goal:300, u:'m', reward:{name:'🏅 Medalha'}},
+  {id:'chat',    name:'Mande 3 mensagens no chat', goal:3, reward:{name:'🏅 Medalha'}},
+  {id:'dancar',  name:'Dance por 15 segundos', goal:15, u:'s', reward:{name:'🏅 Medalha'}},
+  {id:'cartaz',  name:'Levante um cartaz ou bandeira', goal:1, reward:{name:'🏅 Medalha'}},
+  {id:'spray',   name:'Pinte 3 sprays no chão', goal:3, reward:{name:'🏅 Medalha'}},
+  {id:'dirigir', name:'Percorra 500 m de veículo', goal:500, u:'m', reward:{name:'🏅 Medalha'}},
+  {id:'debate',  name:'Ouça um debate por 30 s', goal:30, u:'s', reward:{name:'🏅 Medalha'}},
+  {id:'corrida', name:'Complete uma corrida', goal:1, reward:{name:'🏅 Medalha'}},
 ];
 const DEBATE_TOPICS = [
   ['Ciclovia na avenida: amplia ou não?','amplia','não amplia'],['Pizza de domingo: doce ou salgada?','doce','salgada'],
@@ -506,7 +504,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const fmtN = n => Math.round(n).toLocaleString('pt-BR');
 const lerpAng = (a,b,t) => { let d = ((b-a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI; return a + d*t; };
 const byId = arr => Object.fromEntries(arr.map(x => [x.id, x]));
-const TEAM = byId(TEAMS), CHAR = byId(CHARS), SHIRT = byId(SHIRTS), CAP = byId(CAPS), FLAG = byId(FLAGS), OBJ = byId(OBJS), VEHD = byId(VEH), PASS = byId(PASSES), MISSION = byId(MISSIONS);
+const TEAM = byId(TEAMS), CHAR = byId(CHARS), SHIRT = byId(SHIRTS), CAP = byId(CAPS), FLAG = byId(FLAGS), OBJ = byId(OBJS), VEHD = byId(VEH), MISSION = byId(MISSIONS);
 const filterBad = s => { let o = s; for (const w of BAD) o = o.replace(new RegExp(w, 'gi'), '*'.repeat(w.length)); return o; };
 
 /* ================= PERFIL ================= */
@@ -514,6 +512,7 @@ const DEF = {sprayLeft:3, nick:'', team:'va', look:{char:'homem', shirt:'brasil'
 let prof;
 try { prof = Object.assign(structuredClone(DEF), JSON.parse(localStorage.getItem('avenida_livre') || '{}')); } catch(e) { prof = structuredClone(DEF); }
 prof.look = Object.assign({}, DEF.look, prof.look); prof.settings = Object.assign({}, DEF.settings, prof.settings);
+prof.premium = false; prof.passes = {}; prof.owned = {};   // Premium vem da conta (servidor), nunca do navegador
 // mantém o visual válido para o time escolhido (personagem, camisa, boné, bandeira)
 function fixLook() {
   const t = prof.team, L = prof.look, ok = it => it && (!it.teams || it.teams.includes(t));
@@ -528,33 +527,34 @@ fixLook();
 let saveT = 0;
 function save(now) { if (!now) { clearTimeout(saveT); saveT = setTimeout(() => save(true), 400); return; } try { localStorage.setItem('avenida_livre', JSON.stringify(prof)); } catch(e) {} if (typeof saveCloud === 'function') saveCloud(); }
 
-const hasPass = id => !!(prof.passes.total || prof.passes[id]);
+/* Monetização: só existe o Premium (pagamento único na Cakto). Ele libera tudo, menos anunciar nos telões.
+   Grátis: personagens básicos, camisas, bandeiras e objetos sem preço, andar a pé, carrinho de pipoca e lutar no soco. */
+const FREE_VEH = ['pe', 'pipoca'];
 function owns(kind, it) {
   if (!it) return false;
-  if (prof.owned[kind + ':' + it.id]) return true;
-  if (kind === 'veh') { if (!it.prem && !it.price) return true; if (hasPass('garagem')) return true; return !!(it.prem && prof.premium); }
-  if (kind === 'char' && it.price) return hasPass('personagens');
-  if (!it.price) return true;
-  return hasPass('total');
+  if (prof.premium) return true;
+  if (kind === 'veh') return FREE_VEH.includes(it.id);
+  if (kind === 'char') return !it.special;
+  if (kind === 'weapon') return !it.prem;
+  return !it.price;
 }
-const hasPvp = () => !!(prof.owned['pvp'] || hasPass('garagem'));
 function requireItem(kind, it, cb) {
   if (owns(kind, it)) return cb();
-  const via = kind === 'veh' ? (it.prem ? 'Também liberado pelo Premium e pelos passes Garagem e Total.' : 'Também incluso nos passes Garagem & Objetos e Total.') : kind === 'char' ? 'Fica na sua conta para sempre, em qualquer time. Também incluso nos passes Personagens e Total.' : 'Também incluso no Passe Total.';
-  if (kind === 'veh' && it.prem && !it.price) return buyPass('premium', cb, `${it.name} faz parte do Premium.`);
-  buyModal({name:it.name, price:it.price, desc:via, apply:() => { prof.owned[kind + ':' + it.id] = 1; }, alt:kind === 'veh' && it.prem ? 'premium' : null}, cb);
+  openPremium(`${it.name} é do Premium.`);
 }
+const premTag = '<span class="price">♛ Premium</span>';
 
 /* ================= CONTA (Supabase) =================
    URL e chave "anon/publishable" do projeto Supabase. Elas são públicas: quem protege os dados são as regras (RLS) das tabelas.
    Sem preencher, o jogo roda sem login (bom para testar no PC). */
 const SUPABASE_URL = 'https://zaluvwahhzqnvpuaapua.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zGNk6rop0MNTnpxzVPgjtA_mPXcAotA';
-const LOGIN_REQUIRED = true;   // igual ao original: sem conta só dá para assistir do alto
+// igual ao original: sem conta só dá para assistir do alto (rodando no próprio PC, em localhost, dá para testar sem conta)
+const LOGIN_REQUIRED = !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
 const AUTH = {sb:null, user:null, session:null, after:null, cloudT:0};
 const loginOn = () => !!AUTH.sb;
 const needAccount = () => loginOn() && LOGIN_REQUIRED && !AUTH.user;
-const CLOUD_KEYS = ['team', 'look', 'held', 'cartazes', 'missions', 'done', 'spray', 'flagText', 'settings', 'best', 'map', 'kos', 'sprayLeft', 'owned', 'passes', 'premium'];
+const CLOUD_KEYS = ['team', 'look', 'held', 'cartazes', 'missions', 'done', 'spray', 'flagText', 'settings', 'best', 'map', 'kos', 'sprayLeft'];
 async function initAuth() {
   if (!SUPABASE_URL || !SUPABASE_KEY) return renderAccount();
   try { const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm'); AUTH.sb = createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}}); }
@@ -573,7 +573,7 @@ async function loadCloud() {
   const sb = AUTH.sb, id = AUTH.user.id;
   const [p, e] = await Promise.all([sb.from('profiles').select('nick,data').eq('id', id).maybeSingle(), sb.from('entitlements').select('premium,passes,owned').eq('user_id', id).maybeSingle()]);
   if (p.data) { const d = p.data.data || {}; if (Object.keys(d).length) for (const k of CLOUD_KEYS) if (d[k] !== undefined) prof[k] = d[k]; prof.nick = p.data.nick; }
-  if (e.data) { prof.premium = prof.premium || e.data.premium; prof.passes = Object.assign({}, prof.passes, e.data.passes); prof.owned = Object.assign({}, prof.owned, e.data.owned); }
+  prof.premium = !!(e.data && e.data.premium);   // Premium só vem do servidor (a Cakto confirma o pagamento)
   prof.look = Object.assign({}, DEF.look, prof.look); prof.settings = Object.assign({}, DEF.settings, prof.settings); fixLook();
   save(true); saveCloud(true);
   $('#nick').value = prof.nick; refreshAllUI(); refreshPreview(); if (P.c) rebuildPlayer();
@@ -981,7 +981,9 @@ function buildObj(id) {
   if (id === 'carteira') box(.11, .15, .02, '#1c3f8a', 0, -.06, .06, g);
   if (id === 'sorvete') { const c = mk(CONE, '#d9a35e', .05, .16, .05, 0, -.02, .06, g); c.rotation.x = Math.PI; mk(SPH, '#ff8fb6', .065, .065, .065, 0, .09, .06, g); }
   if (id === 'megafone') { const c = mk(CYL, '#f5f5f5', 1, 1, 1, 0, -.05, .2, g); c.geometry = new THREE.CylinderGeometry(.1, .04, .3, 12); c.scale.set(1,1,1); c.rotation.x = Math.PI/2; }
-  if (id === 'taco') { const c = cyl(.05, .75, '#ff7a1a', 0, -.05, .3, g); c.rotation.x = Math.PI/2.4; }
+  if (id === 'taco' || id === 'w_bastao') { const c = cyl(.05, .8, '#8a5a35', 0, -.05, .32, g); c.rotation.x = Math.PI/2.4; cyl(.035, .2, '#222', 0, -.12, .02, g).rotation.x = Math.PI/2.4; }
+  if (id === 'w_espada') { const s = new THREE.Group(); g.add(s); s.rotation.x = Math.PI/2.3; box(.035, .85, .012, '#d8dde3', 0, -.5, 0, s); box(.18, .035, .045, '#c08a3e', 0, -.06, 0, s); box(.035, .14, .035, '#5a3a20', 0, .03, 0, s); }
+  if (id === 'w_pistola' || id === 'w_paintball') { const pb = id === 'w_paintball'; box(.06, .1, .06, '#222', 0, -.06, .02, g); box(.07, .07, pb ? .3 : .24, pb ? '#2b8a3a' : '#2a2a2e', 0, 0, .14, g); if (pb) cyl(.06, .12, '#ffd400', 0, .07, .1, g); }
   if (id === 'lata') { cyl(.04, .16, '#ddd', 0, -.05, .08, g); }
   return g;
 }
@@ -1355,6 +1357,7 @@ function sprayTex(stamp, color, text, team) {
     if (stamp === 'tag') { x.font = '900 64px Inter,Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineWidth = 10; x.strokeStyle = '#111'; x.shadowBlur = 0; x.save(); x.translate(128, 128); x.rotate(-.18); x.strokeText(text.slice(0, 10), 0, 0); x.shadowBlur = 12; x.fillText(text.slice(0, 10), 0, 0); x.restore(); }
     if (stamp === 'coracao') heart(x, 128, 150, 95);
     if (stamp === 'estrela') star(x, 128, 132, 100);
+    if (stamp === 'splat') { for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(128 + rand(-60, 60), 128 + rand(-60, 60), rand(14, 40), 0, 7); x.fill(); } x.beginPath(); x.arc(128, 128, 55, 0, 7); x.fill(); }
     if (stamp === 'paz') { x.lineWidth = 18; x.beginPath(); x.arc(128, 128, 90, 0, 7); x.moveTo(128, 38); x.lineTo(128, 218); x.moveTo(128, 128); x.lineTo(64, 192); x.moveTo(128, 128); x.lineTo(192, 192); x.stroke(); }
     if (stamp === 'time') { x.save(); x.beginPath(); x.arc(128, 128, 95, 0, 7); x.clip(); drawTeamFlag(x, team, 20, 33, 216, 190); x.restore(); x.lineWidth = 10; x.beginPath(); x.arc(128, 128, 95, 0, 7); x.stroke(); }
     if (stamp === 'smile') { x.lineWidth = 16; x.beginPath(); x.arc(128, 128, 95, 0, 7); x.stroke(); x.beginPath(); x.arc(128, 135, 55, .2, Math.PI - .2); x.stroke(); x.beginPath(); x.arc(95, 100, 12, 0, 7); x.arc(161, 100, 12, 0, 7); x.fill(); }
@@ -1388,7 +1391,7 @@ function playerLook() { return Object.assign({}, prof.look, {team:prof.team}); }
 function rebuildPlayer() {
   const old = P.c; const parent = old && old.root.parent;
   P.c = buildCharacter(playerLook()); P.team = prof.team; P.nick = prof.nick;
-  const held = P.pvp ? {type:'obj', id:'taco'} : prof.held;
+  const held = P.pvp ? weaponHeld() : prof.held;
   setHeld(P.c, held, TEAM[prof.team]);
   if (old) { if (P.tag) old.root.remove(P.tag); if (parent) parent.remove(old.root); }
   if (P.veh) { P.veh.g.add(P.c.root); P.c.root.position.copy(P.veh.seat); } else { scene.add(P.c.root); P.c.root.position.copy(P.pos); }
@@ -1482,9 +1485,9 @@ function updateBots(dt) {
     if (b.follow > 0 && pAlive) {
       b.follow -= dt; if (dP > 2.5) { mvx = (P.pos.x - b.pos.x)/dP; mvz = (P.pos.z - b.pos.z)/dP; sp = dP > 8 ? 4 : 2; b.state = 'walk'; } else b.state = 'idle';
       if (b.follow <= 0 && b.heart) { disposeSprite(b.heart); b.heart = null; }
-    } else if (b.pvp && P.pvp && pAlive && !P.veh && b.team.id !== prof.team && dP < 16) {
-      if (dP > 1.5) { mvx = (P.pos.x - b.pos.x)/dP; mvz = (P.pos.z - b.pos.z)/dP; sp = 4.6; }
-      else if (b.atkCd <= 0) { b.atkCd = rand(1, 1.6); b.atk = 1; b.h = Math.atan2(P.pos.x - b.pos.x, P.pos.z - b.pos.z); hurtPlayer(rand(6, 10), b); }
+    } else if (b.fleeT > 0 && pAlive) {   // apanhou: sai correndo de quem bateu
+      b.fleeT -= dt; const d = Math.max(dP, .1); mvx = (b.pos.x - P.pos.x)/d; mvz = (b.pos.z - P.pos.z)/d; sp = 5;
+      const z = b.zone; if (b.pos.x < z.x0 || b.pos.x > z.x1) mvx = 0; if (b.pos.z < z.z0 || b.pos.z > z.z1) mvz = 0;
       b.state = 'walk';
     } else {
       if (b.state === 'walk' && b.target) {
@@ -1710,44 +1713,118 @@ function sendChat(text) {
   const m = text.match(/@(\S+)/); if (m) { const b = bots.find(b => b.nick.toLowerCase() === m[1].toLowerCase()); if (b) setTimeout(() => { const r = pick(['Oi! Me chamou? 😄', 'Fala, ' + P.nick + '!', 'Tô aqui perto!', 'Haha boa!']); pushChat({nick:b.nick, team:b.team.id, text:r, kind:'bot'}); say(b, r); }, 1500); }
 }
 
-/* ================= COMBATE / PvP ================= */
-function togglePvp(force) {
-  if (G.mode !== 'play') return;
+/* ================= COMBATE (dano liberado entre times diferentes) =================
+   Todo mundo luta no soco; bastão, espada, pistola e paintball são do Premium.
+   Contra jogadores reais quem tira a vida é o servidor; os bots apanham aqui mesmo. */
+const WEAPONS = [
+  {id:'soco',      name:'Soco',      em:'👊', dmg:10, reach:1.9, cd:.45},
+  {id:'bastao',    name:'Bastão',    em:'🏏', dmg:25, reach:2.5, cd:.6, prem:1},
+  {id:'espada',    name:'Espada',    em:'🗡️', dmg:32, reach:2.9, cd:.7, prem:1},
+  {id:'pistola',   name:'Pistola',   em:'🔫', dmg:18, reach:32, cd:.35, prem:1, ranged:1, color:'#ffd84a'},
+  {id:'paintball', name:'Paintball', em:'🎨', dmg:14, reach:32, cd:.3, prem:1, ranged:1, paint:1},
+];
+const WEAPON = byId(WEAPONS);
+P.weapon = 'soco'; P.dead = false; P.deadUntil = 0;
+const enemyTeam = t => !!t && t.id !== prof.team;
+const weaponHeld = () => P.weapon === 'soco' ? null : {type:'obj', id:'w_' + P.weapon};
+function togglePvp(force) {   // "modo luta": arma na mão, Espaço ataca
+  if (G.mode !== 'play' || P.dead) return;
   const on = typeof force === 'boolean' ? force : !P.pvp;
-  if (on && !hasPvp()) return buyModal({name:'PvP', price:PVP_PRICE, desc:'Equipamentos e combate em um só lugar: taco de espuma e o anel vermelho do PvP. P abre o PvP; Espaço ataca. Também incluso nos passes Garagem & Objetos e Total.', apply:() => { prof.owned.pvp = 1; }}, () => togglePvp(true));
   if (on && P.veh) dismount(true);
-  P.pvp = on; rebuildPlayer();
-  $('#hp').classList.toggle('hidden', !on); updateHP();
-  toast(on ? '⚔ PvP ativado · Espaço ataca. Cuidado com quem tem anel vermelho!' : 'PvP desativado'); refreshPop();
-  for (const b of bots) if (b.pvp && !b.ring) { const r = mk(TOR, new THREE.MeshBasicMaterial({color:'#ff3344'}), .55, .55, .55, 0, .05, 0, b.c.root, false); r.rotation.x = Math.PI/2; r.scale.z = .3; b.ring = r; }
+  if (!owns('weapon', WEAPON[P.weapon])) P.weapon = 'soco';
+  P.pvp = on; rebuildPlayer(); updateHP(); refreshPop(); fightButtons();
+  toast(on ? `${WEAPON[P.weapon].em} Modo luta · ${WEAPON[P.weapon].name} · Espaço ataca. Só times diferentes se machucam.` : 'Modo luta desligado');
 }
+function setWeapon(id) {
+  const w = WEAPON[id]; if (!w) return;
+  requireItem('weapon', w, () => { P.weapon = id; if (!P.pvp) togglePvp(true); else { rebuildPlayer(); refreshPop(); toast(`${w.em} ${w.name}`); } });
+}
+function fightButtons() { const jb = $('#jumpBtn'); if (jb) jb.textContent = P.pvp ? 'ATACAR' : 'PULAR'; }
 function attack() {
-  if (P.atk > 0 || P.ko > 0) return; P.atk = 1; sfx('swing');
+  if (P.atk > 0 || P.dead || P.veh || P.ko > 0) return;
+  let w = WEAPON[P.weapon] || WEAPONS[0]; if (!owns('weapon', w)) w = WEAPONS[0];
+  P.atk = 1;
+  if (w.ranged) return shoot(w);
+  sfx('swing');
   setTimeout(() => {
     const fx = Math.sin(P.h), fz = Math.cos(P.h);
+    const inFront = (x, z) => { const dx = x - P.pos.x, dz = z - P.pos.z, d = Math.hypot(dx, dz); return d > .01 && d <= w.reach && (dx*fx + dz*fz)/d > .35; };
     for (const b of bots) {
-      if (b.ko > 0 || b.seat) continue;
-      const dx = b.pos.x - P.pos.x, dz = b.pos.z - P.pos.z, d = Math.hypot(dx, dz); if (d > 2.4) continue;
-      if ((dx*fx + dz*fz)/d < .35) continue;
-      if (!b.pvp) { if (Math.random() < .5) say(b, pick(['Ei! Não tô no PvP 😅', 'Opa, calma aí!', 'Sem violência, amigo 🤝'])); continue; }
-      if (b.team.id === prof.team) { say(b, 'Ei, sou do seu time! 😂'); continue; }
-      b.hp -= rand(22, 32); sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, '#ffdd55', 14);
-      b.pos.x += fx*1.1; b.pos.z += fz*1.1;
-      if (b.hp <= 0) { b.ko = 6; prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Nocaute em ${b.nick}! (${prof.kos} no total)`); say(b, pick(['Aiii! 😵', 'Essa doeu!', 'Volto já!'])); }
+      if (b.ko > 0 || b.seat || !inFront(b.pos.x, b.pos.z)) continue;
+      if (!enemyTeam(b.team)) { if (Math.random() < .4) say(b, 'Ei, sou do seu time! 😂'); continue; }
+      hitBot(b, w, fx, fz);
     }
     for (const r of remotes.values()) {
-      const dx = r.pos.x - P.pos.x, dz = r.pos.z - P.pos.z, d = Math.hypot(dx, dz);
-      if (d > 2.4 || (dx*fx + dz*fz)/d < .35 || r.anim === 'ko') continue;
-      if (!r.pvp || r.team.id === prof.team) continue;
-      netSend({t:'hit', id:r.id}); sfx('hit'); burst(r.pos.x, 1.4, r.pos.z, '#ffdd55', 14);
+      if (r.dead || !enemyTeam(r.team) || !inFront(r.pos.x, r.pos.z)) continue;
+      netSend({t:'hit', id:r.id, w:w.id}); sfx('hit'); burst(r.pos.x, 1.4, r.pos.z, '#ffdd55', 14);
     }
   }, 160);
 }
-function hurtPlayer(dmg, b) {
-  if (P.ko > 0) return; P.hp -= dmg; P.lastHit = T; sfx('hit'); updateHP();
-  if (P.hp <= 0) { P.ko = 4; P.hp = 0; P.moveTarget = null; toast(`😵 Você foi nocauteado por ${b.nick}. Voltando em instantes…`); }
+function hitBot(b, w, fx, fz, color) {
+  b.hp -= w.dmg; b.fleeT = 3; sfx('hit'); burst(b.pos.x, 1.4, b.pos.z, color || '#ffdd55', 14);
+  if (fx !== undefined) { b.pos.x += fx*.8; b.pos.z += fz*.8; }
+  if (b.hp <= 0) { b.ko = 8; b.fleeT = 0; prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Você derrubou ${b.nick}! (${prof.kos})`); say(b, pick(['Aiii! 😵', 'Essa doeu!', 'Volto já!'])); }
 }
-function updateHP() { $('#hpBar').style.width = Math.max(0, P.hp) + '%'; $('#hpTxt').textContent = Math.ceil(Math.max(0, P.hp)) + ' / 100'; }
+const shots = [];
+function shoot(w) {
+  sfx('shot');
+  const dx = Math.sin(P.h), dz = Math.cos(P.h), x = P.pos.x + dx*.7, y = P.pos.y + 1.45, z = P.pos.z + dz*.7;
+  const color = w.paint ? pick(SPRAYC.filter(c => c !== '#111111')) : w.color;
+  spawnShot(x, y, z, dx, dz, w, color, true);
+  netSend({t:'shot', w:w.id, x:+x.toFixed(2), y:+y.toFixed(2), z:+z.toFixed(2), dx:+dx.toFixed(3), dz:+dz.toFixed(3), c:color});
+}
+function spawnShot(x, y, z, dx, dz, w, color, mine) {
+  if (!w) return;
+  const r = w.paint ? .09 : .05, m = mk(SPH, new THREE.MeshBasicMaterial({color}), r, r, w.paint ? r : .16, x, y, z, scene, false);
+  m.rotation.y = Math.atan2(dx, dz);
+  shots.push({m, x, y, z, dx, dz, w, color, mine, left:w.reach});
+}
+function updateShots(dt) {
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i], step = 45*dt/3; let hit = false;
+    for (let k = 0; k < 3 && !hit; k++) {
+      s.x += s.dx*step; s.z += s.dz*step; s.left -= step;
+      if (s.mine) {
+        for (const r of remotes.values()) if (!r.dead && enemyTeam(r.team) && Math.hypot(r.pos.x - s.x, r.pos.z - s.z) < .6) { netSend({t:'hit', id:r.id, w:s.w.id}); sfx('hit'); hit = true; break; }
+        if (!hit) for (const b of bots) if (b.ko <= 0 && !b.seat && enemyTeam(b.team) && Math.hypot(b.pos.x - s.x, b.pos.z - s.z) < .6) { hitBot(b, s.w, undefined, undefined, s.color); hit = true; break; }
+      } else if (P.c && !P.dead && Math.hypot(P.pos.x - s.x, P.pos.z - s.z) < .6) hit = true;
+      if (!hit) for (const c of world.colliders) if (s.x > c.x0 && s.x < c.x1 && s.z > c.z0 && s.z < c.z1 && s.y < c.h) { hit = true; break; }
+    }
+    s.m.position.set(s.x, s.y, s.z);
+    if (hit || s.left <= 0) {
+      if (s.w.paint) addSpray(s.x, s.z, 'splat', s.color, '', TEAM[prof.team], true);
+      if (hit) burst(s.x, s.y, s.z, s.color, 10);
+      scene.remove(s.m); s.m.material.dispose(); shots.splice(i, 1);
+    }
+  }
+}
+/* ---- vida, morte e reviver (o servidor decide; sem Premium a espera é de 5 minutos) ---- */
+function onDamage(m) {
+  P.hp = m.hp; P.lastHit = T; sfx('hit'); updateHP();
+  burst(P.pos.x, 1.4, P.pos.z, m.w === 'paintball' ? '#ff3b6b' : '#ffdd55', 14);
+  const fl = $('#dmgFlash'); fl.classList.remove('hidden'); clearTimeout(G.flashT); G.flashT = setTimeout(() => fl.classList.add('hidden'), 180);
+}
+function enterDead(wait, by) {
+  if (!P.c) return;
+  P.dead = true; P.hp = 0; P.deadUntil = performance.now()/1000 + (wait || 0); P.moveTarget = null; P.emote = null; P.seat = null; closePop();
+  if (P.veh) dismount(true);
+  $('#death').dataset.by = by || ''; $('#death').classList.remove('hidden'); renderDeath(); updateHP();
+}
+function renderDeath() {
+  if (!P.dead) return;
+  const el = $('#death'), left = Math.max(0, Math.ceil(P.deadUntil - performance.now()/1000)), can = prof.premium || left <= 0, by = el.dataset.by;
+  const key = can + ':' + left + ':' + prof.premium; if (el.dataset.k === key) return; el.dataset.k = key;
+  el.innerHTML = `<div class="kicker">Você caiu</div><h3 style="font-size:22px;margin:4px 0 8px">💀 ${by ? 'Derrubado por ' + esc(by) : 'Você foi derrubado'}</h3>
+  ${can ? `<button class="btn gold big" style="width:100%" id="revive">Reviver agora</button>` : `<p class="mut">Sem Premium, você volta em</p><div style="font-family:Anton,Impact;font-size:44px;margin:4px 0 10px">${mmss(left)}</div><button class="btn gold" style="width:100%" id="revivePrem">♛ Reviver na hora com o Premium</button>`}
+  <button class="btn ghost small" style="width:100%;margin-top:6px" data-act="sair">Voltar ao lobby</button>`;
+  const rv = $('#revive'); if (rv) rv.onclick = () => { if (NET.on) netSend({t:'respawn'}); else leaveDead(); };
+  const rp = $('#revivePrem'); if (rp) rp.onclick = () => openPremium('Quem é Premium revive na hora, quantas vezes quiser.');
+}
+function leaveDead() {
+  P.dead = false; P.hp = 100; const el = $('#death'); el.classList.add('hidden'); el.dataset.k = '';
+  spawnPlayer(); updateHP(); toast('Você voltou para a avenida! ✊');
+}
+function updateHP() { const show = P.pvp || P.hp < 100 || P.dead; $('#hp').classList.toggle('hidden', !show || G.mode !== 'play'); $('#hpBar').style.width = Math.max(0, P.hp) + '%'; $('#hpTxt').textContent = Math.ceil(Math.max(0, P.hp)) + ' / 100'; }
 
 /* ================= ATUALIZAÇÃO DO JOGADOR ================= */
 function isTyping() { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); }
@@ -1760,7 +1837,9 @@ function updatePlayer(dt) {
     if (P.ko <= 0) { c.root.rotation.x = 0; spawnPlayer(); updateHP(); }
     return;
   }
-  if (P.pvp && T - P.lastHit > 5 && P.hp < 100) { P.hp = Math.min(100, P.hp + 6*dt); updateHP(); }
+  if (P.dead) { c.root.rotation.x = -Math.PI/2*.95; c.root.position.y = .15; return; }   // caído, esperando reviver
+  if (T - P.lastHit > 8 && P.hp < 100) { P.hp = Math.min(100, P.hp + 4*dt); updateHP(); }   // mesmo ritmo do servidor
+  if (!prof.premium && prof.sprayLeft < SPRAY_FREE) { P.sprayT += dt; if (P.sprayT > 60) { P.sprayT = 0; prof.sprayLeft++; if (G.pop === 'spray') refreshPop(); } }
   if (P.atk > 0) P.atk -= dt*3;
   const typing = isTyping();
   let f = 0, s = 0;
@@ -1930,7 +2009,7 @@ if (isTouch) {
 function sprayFront() { if (P.veh) return toast('Desça do veículo (ou saia do modo aéreo) para pegar o spray.'); doSpray(P.pos.x + Math.sin(P.h)*1.8, P.pos.z + Math.cos(P.h)*1.8); }
 function doSpray(x, z) {
   if (G.mode !== 'play' || P.veh) return;
-  if (!prof.premium && prof.sprayLeft <= 0) return buyModal({name:'Recarga de spray', price:SPRAY_REFILL.price, desc:`+${SPRAY_REFILL.charges} cargas. Com o Premium as recargas são ilimitadas.`, apply:() => { prof.sprayLeft += SPRAY_REFILL.charges; }, alt:'premium'}, () => refreshPop());
+  if (!prof.premium && prof.sprayLeft <= 0) return openPremium('Acabaram suas cargas de spray (volta 1 por minuto). Com o Premium o spray é ilimitado.');
   if (!prof.premium) { prof.sprayLeft--; save(); }
   P.h = Math.atan2(x - P.pos.x, z - P.pos.z);
   addSpray(x, z, prof.spray.stamp, prof.spray.color, P.nick, TEAM[prof.team]); sfx('spray'); prog('spray', 1);
@@ -1971,7 +2050,7 @@ function drawTeloes() {
     } else if (mode === 1) {
       const s = G.supers[G.supers.length - 1];
       x.fillStyle = '#c9a23a'; x.fillRect(0, 0, W, 54); x.fillStyle = '#14201a'; x.font = '900 26px Inter,Arial'; x.fillText('$ SUPERCHAT', 24, 37);
-      if (s) { x.fillStyle = '#ecd27e'; x.font = '800 26px Inter,Arial'; x.fillText(s.nick + ' · ' + money(s.amount), 24, 100); x.fillStyle = '#fff'; x.font = '700 30px Inter,Arial'; wrapText(x, s.text, 460).slice(0, 4).forEach((l, i) => x.fillText(l, 24, 146 + i*38)); }
+      if (s) { x.fillStyle = '#ecd27e'; x.font = '800 26px Inter,Arial'; x.fillText('♛ ' + s.nick, 24, 100); x.fillStyle = '#fff'; x.font = '700 30px Inter,Arial'; wrapText(x, s.text, 460).slice(0, 4).forEach((l, i) => x.fillText(l, 24, 146 + i*38)); }
       else { x.fillStyle = '#fff'; x.font = '700 28px Inter,Arial'; x.fillText('Mande o seu recado', 24, 130); x.fillText('aparecer aqui no telão!', 24, 168); x.fillStyle = '#9fb2a6'; x.font = '600 18px Inter,Arial'; x.fillText('Clique em $ Superchat', 24, 214); }
     } else if (mode === 2) {
       const a = G.ad; x.fillStyle = a.bg; x.fillRect(0, 0, W, H); x.fillStyle = a.fg; x.textAlign = 'center'; x.font = '900 46px Anton,Impact,Arial'; wrapText(x, a.title.toUpperCase(), 470).slice(0, 2).forEach((l, i) => x.fillText(l, W/2, 120 + i*52)); x.font = '600 20px Inter,Arial'; x.fillText(a.sub, W/2, 230); x.font = '600 12px Inter,Arial'; x.fillText('PUBLICIDADE', W/2, 270);
@@ -2029,6 +2108,7 @@ function sfx(n) {
   if (n === 'spray') noiseHit(t, .45, .25, 3000);
   if (n === 'hit') { tone(140, t, .12, 'square', .2); noiseHit(t, .1, .3, 800); }
   if (n === 'swing') noiseHit(t, .15, .12, 1500, null, 'bandpass');
+  if (n === 'shot') { noiseHit(t, .12, .35, 900, null, 'lowpass'); tone(160, t, .08, 'square', .1); }
   if (n === 'beep') tone(660, t, .2, 'square', .12);
   if (n === 'go') tone(1320, t, .5, 'square', .14);
   if (n === 'horn') { tone(392, t, .4, 'sawtooth', .1); tone(494, t, .4, 'sawtooth', .1); }
@@ -2060,17 +2140,8 @@ function toast(msg) { const el = document.createElement('div'); el.className = '
 function openModal(html) { $('#modal').innerHTML = html; $('#modalWrap').classList.remove('hidden'); }
 function closeModal() { $('#modalWrap').classList.add('hidden'); $('#modal').innerHTML = ''; }
 $('#modalWrap').addEventListener('click', e => { if (e.target.id === 'modalWrap' || e.target.closest('[data-close]')) closeModal(); });
-function buyModal(prod, cb) {
-  openModal(`<div class="kicker">Loja</div><h3>${esc(prod.name)}</h3><p class="mut">${esc(prod.desc || '')}</p><div class="price">${money(prod.price)}</div><div class="demo">Modo demonstração: nenhum pagamento real é feito ao confirmar. Para cobrar de verdade, conecte um provedor (Pix, Mercado Pago, Stripe) no ponto marcado no código.</div><div style="display:flex;gap:8px"><button class="btn gold" id="buyOk" style="flex:1">Confirmar compra (demo)</button><button class="btn" data-close>Cancelar</button></div>`);
-  if (prod.benefits) $('#modal .price').insertAdjacentHTML('afterend', `<div class="list">${prod.benefits.map(b => `<div class="li" style="padding:9px 12px"><span>✓ ${esc(b)}</span></div>`).join('')}</div>`);
-  if (prod.alt === 'premium' && !prof.premium) $('#buyOk').insertAdjacentHTML('afterend', `<button class="btn" id="buyAlt" style="flex:1">Ou Premium · ${money(PREMIUM_PRICE)}</button>`);
-  const alt = $('#buyAlt'); if (alt) alt.onclick = () => buyPass('premium', cb);
-  $('#buyOk').onclick = () => { /* >>> integre o pagamento real aqui <<< */ prod.apply(); save(true); closeModal(); toast('Compra liberada ✓'); sfx('coin'); if (P.c) rebuildPlayer(); refreshAllUI(); cb && cb(); };
-}
-function buyPass(id, cb, why) {
-  const p = PASS[id]; if ((id === 'premium' && prof.premium) || prof.passes[id]) { cb && cb(); return; }
-  buyModal({name:p.name, price:p.price, desc:(why ? why + ' ' : '') + p.desc, benefits:p.benefits, apply:() => { prof.premium = true; prof.passes[id] = 1; }}, cb);
-}
+// Coisas do Premium: se a conta já é Premium segue; se não, abre a tela do Premium.
+function buyPass(id, cb, why) { if (prof.premium) return cb && cb(); openPremium(why); }
 function refreshAllUI() { renderTeams(); renderChars(); renderCustom($('#lobbyCustom')); if (G.pop) refreshPop(); }
 
 /* ================= LOBBY ================= */
@@ -2089,7 +2160,7 @@ function renderChars() {
 $('#charGrid').addEventListener('click', e => { if (e.target.closest('[data-shop]')) return openCharShop(); const b = e.target.closest('[data-char]'); if (!b) return; const c = CHAR[b.dataset.char]; requireItem('char', c, () => { prof.look.char = c.id; save(); renderChars(); refreshPreview(); if (P.c) rebuildPlayer(); }); });
 function renderCustom(el, inGame) {
   if (!el) return; const L = prof.look, team = TEAM[prof.team], f = CHAR[L.char].g === 'f';
-  const chip = (kind, it, on, label) => `<button class="chip ${on ? 'on' : ''} ${it.price && !owns(kind, it) ? 'locked' : ''}" data-k="${kind}" data-id="${it.id}">${label || it.name}${it.price && !owns(kind, it) ? ` <span class="price">${money(it.price)}</span>` : ''}</button>`;
+  const chip = (kind, it, on, label) => `<button class="chip ${on ? 'on' : ''} ${!owns(kind, it) ? 'locked' : ''}" data-k="${kind}" data-id="${it.id}">${label || it.name}${!owns(kind, it) ? ' ' + premTag : ''}</button>`;
   const held = prof.held || {};
   el.innerHTML = `
   ${inGame ? '' : '<div class="sec"><h4 style="color:var(--gold);letter-spacing:.12em;font-size:10px">SEU VISUAL</h4></div>'}
@@ -2181,19 +2252,19 @@ function thumb(id) {
 }
 function makeThumbs() { for (const ch of CHARS) if (!ch.special || ch.pop) thumb(ch.id); }
 function fillThumbs(root) { const imgs = [...root.querySelectorAll('img[data-thumb]')]; const step = () => { const t0 = performance.now(); while (imgs.length && performance.now() - t0 < 25) { const im = imgs.shift(); im.src = thumb(im.dataset.thumb); } if (imgs.length) requestAnimationFrame(step); }; step(); }
-function charCard(c) { const mine = owns('char', c); return `<button class="char ${prof.look.char === c.id ? 'on' : ''}" data-char="${c.id}">${c.price && !mine ? `<span class="tag">${money(c.price)}</span>` : c.special ? '<span class="tag">Seu ✓</span>' : ''}<span class="ck">✓</span><img data-thumb="${c.id}" ${thumbs[c.id] ? `src="${thumbs[c.id]}"` : ''} alt="">${esc(c.name)}</button>`; }
+function charCard(c) { const mine = owns('char', c); return `<button class="char ${prof.look.char === c.id ? 'on' : ''}" data-char="${c.id}">${!mine ? '<span class="tag">♛ Premium</span>' : c.special ? '<span class="tag">♛ ✓</span>' : ''}<span class="ck">✓</span><img data-thumb="${c.id}" ${thumbs[c.id] ? `src="${thumbs[c.id]}"` : ''} alt="">${esc(c.name)}</button>`; }
 function openCharShop(cat = 'todos', q = '') {
   const list = CHARS.filter(c => c.special && (cat === 'todos' || c.cat === cat) && c.name.toLowerCase().includes(q.toLowerCase()));
-  openModal(`<div class="kicker">Loja de personagens · ${money(30)} cada</div><h3>Ver mais personagens</h3><p class="mut" style="font-size:12.5px">Ficam na sua conta para sempre e funcionam em qualquer time. O Passe Personagens libera todos, inclusive os próximos.</p>
+  openModal(`<div class="kicker">Loja de personagens · ♛ Premium</div><h3>Ver mais personagens</h3><p class="mut" style="font-size:12.5px">Todos os especiais são liberados pelo Premium e funcionam em qualquer time, inclusive os próximos que chegarem.</p>
   <input id="shopQ" placeholder="Buscar personagem" value="${esc(q)}" style="margin-top:10px">
   <div class="row" style="margin-top:8px" id="shopCats">${CHAR_CATS.map(([id, n]) => `<button class="chip ${cat === id ? 'on' : ''}" data-cat="${id}">${n}</button>`).join('')}</div>
   <div class="chars" id="shopGrid" style="margin-top:12px">${list.map(charCard).join('') || '<div class="mut">Nenhum personagem encontrado.</div>'}</div>
-  ${hasPass('personagens') ? '' : `<button class="btn gold" style="width:100%;margin-top:12px" id="shopPass">Passe Personagens · ${money(350)} · todos liberados</button>`}`);
+  ${prof.premium ? '' : `<button class="btn gold" style="width:100%;margin-top:12px" id="shopPass">♛ Liberar todos com o Premium</button>`}`);
   fillThumbs($('#shopGrid'));
   $('#shopQ').oninput = e => { const v = e.target.value; clearTimeout(G.shopT); G.shopT = setTimeout(() => { openCharShop(cat, v); const i = $('#shopQ'); i.focus(); i.setSelectionRange(v.length, v.length); }, 250); };
   $('#shopCats').onclick = e => { const b = e.target.closest('[data-cat]'); if (b) openCharShop(b.dataset.cat, $('#shopQ').value); };
   $('#shopGrid').onclick = e => { const b = e.target.closest('[data-char]'); if (!b) return; const c = CHAR[b.dataset.char]; requireItem('char', c, () => { prof.look.char = c.id; save(); closeModal(); renderChars(); refreshPreview(); if (P.c) rebuildPlayer(); toast(`${c.name} selecionado ✓`); }); };
-  const sp = $('#shopPass'); if (sp) sp.onclick = () => buyPass('personagens', () => openCharShop(cat, q));
+  const sp = $('#shopPass'); if (sp) sp.onclick = () => openPremium();
 }
 $('#nick').value = prof.nick;
 $('#nick').addEventListener('input', () => { prof.nick = $('#nick').value; save(); });
@@ -2242,6 +2313,7 @@ function startWatch() {
 }
 function toLobby() {
   setTimeout(checkOrient);
+  P.dead = false; $('#death').classList.add('hidden'); $('#death').dataset.k = '';
   netSend({t:'leave'});
   if (P.veh) dismount(true); if (P.c) { scene.remove(P.c.root); P.c = null; } P.pvp = false; P.seat = null; P.listening = null; $('#listen').classList.add('hidden'); $('#hp').classList.add('hidden');
   G.mode = 'lobby'; G.aerial = false; G.sprayMode = false; closePop(); $('#hud').classList.add('hidden'); $('#lobby').classList.remove('hidden'); $('#joy').classList.add('hidden'); $('#jumpBtn').classList.add('hidden');
@@ -2257,7 +2329,7 @@ function popHead(t, sub) { return `<div class="pop-h"><h3>${t}</h3><button class
 function refreshPop() {
   const el = $('#pop'), n = G.pop; if (!n) return;
   if (n === 'veiculos') {
-    el.innerHTML = popHead('Veículos', 'Escolha como circular. O item selecionado fica destacado. <b>F</b> desce do veículo.') + `<div class="grid3">${VEH.filter(forTeam).map(v => `<button class="tile ${P.vehId === v.id ? 'on' : ''}" data-veh="${v.id}">${v.key ? `<span class="k">${v.key}</span>` : ''}${owns('veh', v) ? '' : `<span class="lock">${v.price ? money(v.price) : '♛ Premium'}</span>`}<span class="em">${v.em}</span>${v.name}</button>`).join('')}</div>${prof.passes.garagem ? '' : '<button class="btn gold" style="width:100%;margin-top:12px" data-act="pass-garagem">Toda a garagem em um passe · R$ 300,00 →</button>'}`;
+    el.innerHTML = popHead('Veículos', 'Escolha como circular. O item selecionado fica destacado. <b>F</b> desce do veículo.') + `<div class="grid3">${VEH.filter(forTeam).map(v => `<button class="tile ${P.vehId === v.id ? 'on' : ''}" data-veh="${v.id}">${v.key ? `<span class="k">${v.key}</span>` : ''}${owns('veh', v) ? '' : `<span class="lock">♛</span>`}<span class="em">${v.em}</span>${v.name}</button>`).join('')}</div>${prof.passes.garagem ? '' : '<button class="btn gold" style="width:100%;margin-top:12px" data-act="pass-garagem">Toda a garagem em um passe · R$ 300,00 →</button>'}`;
   } else if (n === 'cartaz') {
     el.innerHTML = popHead('Cartaz / bandeira', 'Cartazes, bandeiras e objetos de mão. Um item equipado por vez.') + `<div id="popCustom"></div>`;
     renderCustom(el.querySelector('#popCustom'), true); el.querySelectorAll('#popCustom .sec').forEach((s, i) => { const h = s.querySelector('h4'); if (!h || !/Bandeiras|cartaz|Objetos/.test(h.textContent)) s.remove(); });
@@ -2266,8 +2338,9 @@ function refreshPop() {
     const sp = prof.spray;
     el.innerHTML = popHead('Spray', 'Clique no chão perto de você para pintar, ou aperte <b>E</b>.') + `<div class="sec"><h4>Estampa</h4><div class="row">${STAMPS.map(s => `<button class="chip ${sp.stamp === s.id ? 'on' : ''}" data-stamp="${s.id}">${s.name}</button>`).join('')}</div></div><div class="sec"><h4>Cor</h4><div class="row">${SPRAYC.map(c => `<button class="swatch ${sp.color === c ? 'on' : ''}" data-scol="${c}" style="background:${c}"></button>`).join('')}</div></div><div class="sec" style="display:flex;justify-content:space-between;align-items:center"><span class="mut">Cargas: <b style="color:#fff">${prof.premium ? '∞ (Premium)' : prof.sprayLeft + ' restantes'}</b></span><button class="btn gold small" data-act="spraynow">Pintar agora (E)</button></div>`;
   } else if (n === 'pvp') {
-    const has = hasPvp();
-    el.innerHTML = popHead('PvP', 'Equipamentos e combate em um só lugar. <b>P</b> abre o PvP; <b>Espaço</b> ataca. Só quem tem anel vermelho entra na briga.') + (has ? `<div class="list"><div class="li"><div><b>🏏 Taco de espuma</b><small>Dano leve · nocauteia em 4 golpes</small></div><span class="chip on">Equipado</span></div><div class="li"><div><b>Nocautes</b><small>Total da sua conta</small></div><b>${prof.kos || 0}</b></div></div><button class="btn ${P.pvp ? 'red' : 'gold'}" style="width:100%;margin-top:12px" data-act="pvptoggle">${P.pvp ? 'Desativar PvP' : 'Ativar PvP (P)'}</button>` : `<button class="btn gold" style="width:100%" data-act="pvptoggle">PvP · ${money(PVP_PRICE)}</button>`);
+    el.innerHTML = popHead('Luta', 'O dano está liberado entre times diferentes. <b>P</b> liga o modo luta; <b>Espaço</b> ataca. Sem Premium, quem cai espera 5 minutos para voltar; com Premium, revive na hora.') + `<div class="grid3">${WEAPONS.map(w => `<button class="tile ${P.pvp && P.weapon === w.id ? 'on' : ''}" data-weapon="${w.id}">${owns('weapon', w) ? '' : '<span class="lock">♛</span>'}<span class="em">${w.em}</span>${w.name}<small class="mut" style="display:block;font-size:10.5px">dano ${w.dmg}${w.ranged ? ' · tiro' : ''}</small></button>`).join('')}</div>`
+      + `<div class="list" style="margin-top:10px"><div class="li"><div><b>Derrubados por você</b><small>Total da sua conta</small></div><b>${prof.kos || 0}</b></div></div><button class="btn ${P.pvp ? 'red' : 'gold'}" style="width:100%;margin-top:12px" data-act="pvptoggle">${P.pvp ? 'Sair do modo luta' : 'Entrar no modo luta (P)'}</button>`
+      + (prof.premium ? '' : `<button class="btn small" style="width:100%;margin-top:6px" data-act="premium">♛ Armas e reviver na hora com o Premium</button>`);
   } else if (n === 'anim') {
     const A = [['dance', '💃', 'Dançar', '7'], ['jump', '🦘', 'Pular', '8'], ['wave', '👋', 'Acenar', '6'], ['clap', '👏', 'Aplaudir', '5'], ['sitground', '🧘', 'Sentar', '4']];
     el.innerHTML = popHead('Animações', 'Celebre, dance e interaja com as pessoas na avenida.') + `<div class="grid3">${A.map(([id, em, nm, k]) => `<button class="tile ${P.emote === id ? 'on' : ''}" data-emote="${id}"><span class="k">${k}</span><span class="em">${em}</span>${nm}</button>`).join('')}</div>`;
@@ -2279,6 +2352,7 @@ function refreshPop() {
 $('#pop').addEventListener('click', e => {
   if (e.target.closest('[data-closepop]')) return closePop();
   const v = e.target.closest('[data-veh]'); if (v) return setVehicle(v.dataset.veh);
+  const wp = e.target.closest('[data-weapon]'); if (wp) return setWeapon(wp.dataset.weapon);
   const st = e.target.closest('[data-stamp]'); if (st) { prof.spray.stamp = st.dataset.stamp; save(); return refreshPop(); }
   const sc = e.target.closest('[data-scol]'); if (sc) { prof.spray.color = sc.dataset.scol; save(); return refreshPop(); }
   const em = e.target.closest('[data-emote]'); if (em) { emote(em.dataset.emote); return refreshPop(); }
@@ -2319,43 +2393,59 @@ function applyChatH() { $('#msgs').style.height = prof.settings.chatH + 'px'; $(
 $('#chatMin').onclick = () => { const h = $('#chatBody').classList.toggle('hidden'); $('#chatMin').textContent = h ? '+' : '–'; };
 $('#msgs').addEventListener('click', e => { const r = e.target.closest('.rep'); if (r) { r.closest('.msg').style.opacity = .3; toast('Mensagem denunciada. Obrigado por ajudar a manter a avenida em paz.'); } });
 
-function openPremium() {
-  openModal(`<div class="kicker">Premium · opcional</div><h3>♛ Premium</h3><div class="price">${money(PREMIUM_PRICE)} <span class="mut" style="font-family:Inter;font-size:14px">pagamento único</span></div>
-  <div class="list">${PREMIUM_BENEFITS.map(t => `<div class="li"><b style="font-weight:600">✓ ${t}</b></div>`).join('')}</div>
-  <p class="mut" style="font-size:12px;margin-top:10px">Bandeiras, personagens e veículos premium têm seus próprios preços — ou vêm nos passes.</p>
-  ${prof.premium ? '<p style="margin-top:14px;color:var(--green);font-weight:700">Você já é Premium ✓</p>' : `<button class="btn gold" style="width:100%;margin-top:14px" id="goPrem">Quero ser Premium</button>`}<button class="btn ghost" style="width:100%;margin-top:6px" data-act="passes">Ver passes</button>`);
-  const g = $('#goPrem'); if (g) g.onclick = () => buyPass('premium');
+// O Premium (pagamento único na Cakto) libera tudo do jogo, menos anunciar nos telões.
+const PREMIUM_ALL = ['Todos os 83 personagens especiais', 'Todos os veículos: carro, moto, caminhão de som, carreta, dirigível, Tesla, montarias…', 'Armas: bastão, espada, pistola e paintball', 'Reviver na hora, quantas vezes quiser (sem esperar 5 min)', 'Superchat com voz, fixado e nos telões', 'Todas as bandeiras e objetos de mão', 'Spray ilimitado e até 20 cartazes', 'Debates, Crush e selo ♛ no nome'];
+function openPremium(why) {
+  const can = !!CAKTO_CHECKOUT_URL;
+  openModal(`<div class="kicker">Premium · pagamento único</div><h3>♛ Premium</h3>${why ? `<p style="color:var(--gold);font-weight:600;margin-top:4px">${esc(why)}</p>` : ''}
+  <div class="price">${money(PREMIUM_PRICE)} <span class="mut" style="font-family:Inter;font-size:14px">uma vez só, para sempre</span></div>
+  <div class="list">${PREMIUM_ALL.map(t => `<div class="li" style="padding:9px 12px"><b style="font-weight:600">✓ ${esc(t)}</b></div>`).join('')}</div>
+  <p class="mut" style="font-size:12px;margin-top:10px">Anunciar nos telões não faz parte do Premium. Pagamento por Pix ou cartão pela Cakto; o Premium cai na conta com o mesmo e-mail.</p>
+  ${prof.premium ? '<p style="margin-top:14px;color:var(--green);font-weight:700">Você já é Premium ✓ Obrigado pelo apoio!</p>'
+    : `<button class="btn gold big" style="width:100%;margin-top:14px" id="goPrem">${can ? `Quero ser Premium · ${money(PREMIUM_PRICE)}` : 'Premium em breve'}</button>`}`);
+  const g = $('#goPrem'); if (g) g.onclick = () => {
+    if (!can) return toast('O pagamento ainda está sendo configurado. Volte em breve!');
+    if (!AUTH.user) { AUTH.after = () => openPremium(why); return openAuth('entrar', 'Entre na sua conta para o Premium cair nela.'); }
+    const url = CAKTO_CHECKOUT_URL + (CAKTO_CHECKOUT_URL.includes('?') ? '&' : '?') + 'email=' + encodeURIComponent(AUTH.user.email || '');
+    window.open(url, '_blank', 'noopener');
+    waitPremium();
+  };
 }
-function openPasses() {
-  openModal(`<div class="kicker">Loja</div><h3>Premium e passes</h3><p class="mut">Jogar é grátis. Tudo aqui é opcional e é pagamento único.</p><div class="list">${PASSES.map(p => { const has = p.id === 'premium' ? prof.premium : prof.passes[p.id] || (prof.passes.total && p.id !== 'total'); return `<div class="li" style="flex-direction:column;align-items:stretch;gap:6px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${p.name}</b><small style="color:var(--gold)">${p.tag}</small></div>${has ? '<span class="chip on">Ativo ✓</span>' : `<button class="btn gold small" data-buypass="${p.id}">${money(p.price)}</button>`}</div><small>${p.desc}</small><small>${p.benefits.map(b => '✓ ' + esc(b)).join('<br>')}</small></div>`; }).join('')}</div>`);
-  $$('[data-buypass]').forEach(b => b.onclick = () => buyPass(b.dataset.buypass));
+const openPasses = () => openPremium();
+// Depois de abrir o checkout, confere de tempos em tempos se a Cakto já confirmou o pagamento.
+function waitPremium() {
+  openModal(`<div class="kicker">Premium</div><h3>Aguardando o pagamento…</h3><p class="mut">Termine o pagamento na janela da Cakto. Assim que ele for aprovado (no Pix leva alguns segundos), o Premium aparece aqui sozinho.</p><div id="wpState" class="mut" style="margin-top:10px">Conferindo…</div><button class="btn ghost small" style="width:100%;margin-top:12px" data-close>Fechar (o Premium cai na conta mesmo assim)</button>`);
+  clearInterval(G.premT); let n = 0;
+  G.premT = setInterval(async () => {
+    n++; if (n > 120 || !AUTH.user) return clearInterval(G.premT);
+    const { data } = await AUTH.sb.from('entitlements').select('premium').eq('user_id', AUTH.user.id).maybeSingle();
+    const st = $('#wpState'); if (st) st.textContent = `Conferindo… (${n})`;
+    if (data && data.premium) {
+      clearInterval(G.premT); prof.premium = true; save(); renderAccount(); refreshAllUI(); if (P.c) { rebuildPlayer(); netHello(true); }
+      openModal(`<div class="kicker">Premium</div><h3>♛ Você agora é Premium!</h3><p class="mut">Tudo liberado: personagens, veículos, armas, reviver na hora e superchat. Obrigado pelo apoio! 💛</p><button class="btn gold" style="width:100%;margin-top:12px" data-close>Bora pra avenida</button>`);
+      sfx('match');
+    }
+  }, 5000);
 }
-// Superchat (regras do original): R$ 5 a R$ 1.000 · até 200 letras · voz a partir de R$ 10 · telões a partir de R$ 100
-const SC = {min:5, voiceMin:10, adMin:100, max:1000, maxChars:200, suggested:[5, 10, 20, 50], voices:[['homem', 'Homem'], ['mulher', 'Mulher'], ['tiozao', 'Tiozão']]};
+// Superchat: benefício do Premium. Fica fixado, aparece nos telões e a avenida ouve em voz.
+const SC = {maxChars:200, voices:[['homem', 'Homem'], ['mulher', 'Mulher'], ['tiozao', 'Tiozão']]};
 function openSuperchat() {
   if (G.mode !== 'play') return toast('Entre no jogo para mandar superchat.');
-  let amt = 10, voice = 'homem';
-  openModal(`<div class="kicker">$ Superchat</div><h3>Destaque sua mensagem</h3><p class="mut" style="font-size:12.5px">Fica fixada no chat e brilha em cima do seu personagem. A partir de ${money(SC.voiceMin)} a avenida inteira <b>ouve</b> sua mensagem em voz; a partir de ${money(SC.adMin)} ela também vai para os <b>telões</b>.</p>
+  if (!prof.premium) return openPremium('Superchat é do Premium.');
+  if (T - (G.lastSuper || -99) < 20) return toast('Espere alguns segundos para mandar outro superchat.');
+  let voice = 'homem';
+  openModal(`<div class="kicker">$ Superchat · Premium</div><h3>Destaque sua mensagem</h3><p class="mut" style="font-size:12.5px">Fica fixada no chat, aparece nos telões e a avenida inteira ouve em voz.</p>
   <textarea id="scText" maxlength="${SC.maxChars}" rows="3" placeholder="Sua mensagem (até ${SC.maxChars} letras)" style="margin-top:10px"></textarea>
-  <div class="row" style="margin-top:10px" id="scAmts">${SC.suggested.map(v => `<button class="chip ${v === amt ? 'on' : ''}" data-amt="${v}">${money(v)}</button>`).join('')}</div>
-  <div class="sec"><h4>Outro valor (R$ ${SC.min} a ${SC.max})</h4><input id="scCustom" type="number" min="${SC.min}" max="${SC.max}" step="1" value="${amt}"></div>
-  <div class="sec" id="scVoiceBox"><h4>Voz</h4><div class="row" id="scVoices">${SC.voices.map(([id, n]) => `<button class="chip ${id === voice ? 'on' : ''}" data-voice="${id}">${n}</button>`).join('')}</div></div>
-  <div class="mut" id="scInfo" style="font-size:12px;margin-top:8px"></div>
-  <div class="demo">Modo demonstração: nenhum pagamento real é feito.</div><button class="btn gold" style="width:100%" id="scOk">Enviar superchat</button>`);
-  const info = () => { $('#scVoiceBox').style.opacity = amt >= SC.voiceMin ? 1 : .4; $('#scInfo').textContent = `${money(amt)} · fixado ${Math.round(Math.min(600, amt*6))} s${amt >= SC.voiceMin ? ' · com voz' : ''}${amt >= SC.adMin ? ' · aparece nos telões' : ''}`; $('#scOk').textContent = `Enviar superchat · ${money(amt)}`; };
-  info();
-  $('#scAmts').onclick = e => { const b = e.target.closest('[data-amt]'); if (!b) return; amt = +b.dataset.amt; $('#scCustom').value = amt; $$('#scAmts .chip').forEach(c => c.classList.toggle('on', c === b)); info(); };
-  $('#scCustom').oninput = e => { amt = clamp(Math.round(+e.target.value || SC.min), SC.min, SC.max); $$('#scAmts .chip').forEach(c => c.classList.toggle('on', +c.dataset.amt === amt)); info(); };
+  <div class="sec"><h4>Voz</h4><div class="row" id="scVoices">${SC.voices.map(([id, n]) => `<button class="chip ${id === voice ? 'on' : ''}" data-voice="${id}">${n}</button>`).join('')}</div></div>
+  <button class="btn gold" style="width:100%;margin-top:12px" id="scOk">Enviar superchat</button>`);
   $('#scVoices').onclick = e => { const b = e.target.closest('[data-voice]'); if (!b) return; voice = b.dataset.voice; $$('#scVoices .chip').forEach(c => c.classList.toggle('on', c === b)); speak('Teste de voz', voice); };
   $('#scOk').onclick = () => {
     const text = filterBad($('#scText').value.trim()).slice(0, SC.maxChars); if (!text) return toast('Escreva a mensagem.');
-    const v = amt >= SC.voiceMin ? voice : null;
-    /* >>> integre o pagamento real aqui (valor: amt) <<< */
-    showSuper({nick:P.nick, team:prof.team, text, kind:'super', amount:amt, prem:prof.premium, voice:v});
-    netSend({t:'super', text, amount:amt, voice:v});
-    const dur = Math.min(600, amt*6)*1000;
-    if (P.super) disposeSprite(P.super); P.super = labelSprite('$ ' + text.slice(0, 40), {bg:'rgba(201,162,58,.95)', fg:'#1d1a0e', h:.5}); P.super.position.y = P.c.raise ? 4.35 : 2.75; P.c.root.add(P.super); const s = P.super; setTimeout(() => { if (P.super === s) { disposeSprite(s); P.super = null; } }, dur);
-    closeModal(); sfx('coin'); toast(amt >= SC.adMin ? 'Superchat enviado! Olha o telão 📺' : 'Superchat enviado! 💛');
+    G.lastSuper = T;
+    showSuper({nick:P.nick, team:prof.team, text, kind:'super', amount:0, prem:true, voice});
+    netSend({t:'super', text, voice});
+    if (P.super) disposeSprite(P.super); P.super = labelSprite('$ ' + text.slice(0, 40), {bg:'rgba(201,162,58,.95)', fg:'#1d1a0e', h:.5}); P.super.position.y = P.c.raise ? 4.35 : 2.75; P.c.root.add(P.super); const s = P.super; setTimeout(() => { if (P.super === s) { disposeSprite(s); P.super = null; } }, 60000);
+    closeModal(); sfx('coin'); toast('Superchat enviado! Olha o telão 📺');
   };
 }
 function speak(text, voice) {
@@ -2367,8 +2457,8 @@ function speak(text, voice) {
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 function showSuper(m) {
-  pushChat(m); if (m.amount >= SC.adMin) { G.supers.push(m); G.telIdx = 1; drawTeloes(); }
-  const pin = $('#pinned'); pin.innerHTML = `📌 <b>${esc(m.nick)}</b> · ${money(m.amount)}<br>${esc(m.text)}`; pin.classList.remove('hidden'); clearTimeout(G.pinT); G.pinT = setTimeout(() => pin.classList.add('hidden'), Math.min(600, m.amount*6)*1000);
+  pushChat(m); G.supers.push(m); G.telIdx = 1; drawTeloes();
+  const pin = $('#pinned'); pin.innerHTML = `📌 <b>♛ ${esc(m.nick)}</b><br>${esc(m.text)}`; pin.classList.remove('hidden'); clearTimeout(G.pinT); G.pinT = setTimeout(() => pin.classList.add('hidden'), 60000);
   if (m.voice) speak(`${m.nick} disse: ${m.text}`, m.voice);
 }
 function openMaps() {
@@ -2468,7 +2558,7 @@ function updateMissionCard() {
 function prog(id, amt) {
   if (G.mode !== 'play') return; const m = MISSION[id]; if (!m || prof.done[id]) return;
   prof.missions[id] = (prof.missions[id] || 0) + amt;
-  if (prof.missions[id] >= m.goal) { prof.done[id] = 1; prof.owned[m.reward.kind + ':' + m.reward.id] = 1; toast(`🎁 Missão concluída! Você ganhou: ${m.reward.name}`); sfx('coin'); pushChat({kind:'sys', text:`Missão concluída: ${m.name} → ${m.reward.name}`}); save(true); if (G.pop) refreshPop(); }
+  if (prof.missions[id] >= m.goal) { prof.done[id] = 1; toast(`🏅 Missão concluída: ${m.name}!`); sfx('coin'); pushChat({kind:'sys', text:`🏅 Missão concluída: ${m.name}`}); save(true); if (G.pop) refreshPop(); }
   else save();
 }
 function openDebates() {
@@ -2579,7 +2669,7 @@ function netLook() { clearTimeout(netLookT); netLookT = setTimeout(() => { if (G
 function netTick(dt) {
   if (!NET.on || G.mode !== 'play' || !P.c) return;
   NET.sendT -= dt; if (NET.sendT > 0) return; NET.sendT = .1;
-  netSend({t:'st', x:+P.pos.x.toFixed(2), y:+P.pos.y.toFixed(2), z:+P.pos.z.toFixed(2), h:+P.h.toFixed(3), a:P.ko > 0 ? 'ko' : (P.curAnim || 'idle'), v:P.vehId, p:P.pvp ? 1 : 0, atk:P.atk > 0 ? 1 : 0});
+  netSend({t:'st', x:+P.pos.x.toFixed(2), y:+P.pos.y.toFixed(2), z:+P.pos.z.toFixed(2), h:+P.h.toFixed(3), a:P.ko > 0 || P.dead ? 'ko' : (P.curAnim || 'idle'), v:P.vehId, p:P.pvp ? 1 : 0, atk:P.atk > 0 ? 1 : 0});
 }
 function netHandle(m) {
   switch (m.t) {
@@ -2588,11 +2678,18 @@ function netHandle(m) {
     case 'join': if (m.p.id === NET.id) break; if (remotes.has(m.p.id)) remoteLook(remotes.get(m.p.id), m.p); else { addRemote(m.p); pushChat({kind:'sys', text:`${m.p.nick} entrou na avenida 👋`}); } break;
     case 'look': { const r = remotes.get(m.p.id); if (r) remoteLook(r, m.p); break; }
     case 'leave': { const r = remotes.get(m.id); if (r) { pushChat({kind:'sys', text:`${r.nick} saiu`}); removeRemote(m.id); } break; }
-    case 'snap': for (const [id, x, y, z, h, a, v, p, atk] of m.ps) { const r = remotes.get(id); if (!r) continue; if (r.tgt.distanceToSquared(_v.set(x, y, z)) > 900) r.pos.set(x, y, z); r.tgt.set(x, y, z); r.th = h; r.anim = a; r.pvp = !!p; if (atk && r.atk <= 0) r.atk = 1; if (r.veh !== v) remoteVeh(r, v); } break;
+    case 'snap': for (const [id, x, y, z, h, a, v, p, atk] of m.ps) { const r = remotes.get(id); if (!r) continue; if (r.tgt.distanceToSquared(_v.set(x, y, z)) > 900) r.pos.set(x, y, z); r.tgt.set(x, y, z); r.th = h; r.anim = a; r.dead = a === 'ko'; r.pvp = !!p; if (atk && r.atk <= 0) r.atk = 1; if (r.veh !== v) remoteVeh(r, v); } break;
     case 'chat': { const r = remotes.get(m.id); pushChat({nick:m.nick, team:m.team, text:m.text, kind:'real', teamOnly:m.teamOnly, prem:m.prem}); if (r) say(r, m.text); break; }
     case 'spray': addSpray(m.x, m.z, m.stamp, m.color, m.nick, TEAM[m.team] || TEAMS[0]); break;
     case 'super': { showSuper({nick:m.nick, team:m.team, text:m.text, kind:'super', amount:m.amount, prem:m.prem, voice:m.voice}); const r = remotes.get(m.id); if (r) say(r, '$ ' + m.text, {bg:'#f2d27a'}); break; }
-    case 'dmg': if (P.pvp && G.mode === 'play') { hurtPlayer(m.amount, {nick:m.nick}); burst(P.pos.x, 1.4, P.pos.z, '#ffdd55', 14); } break;
+    case 'dmg': if (G.mode === 'play') onDamage(m); break;
+    case 'dead': if (G.mode === 'play') enterDead(m.wait, m.by); break;
+    case 'respawned': if (P.dead) leaveDead(); break;
+    case 'me': prof.premium = !!m.premium; renderAccount(); if (P.c) rebuildPlayer(); if (m.dead) enterDead(m.wait); break;
+    case 'died': { const r = remotes.get(m.id); if (r) r.dead = true; pushChat({kind:'sys', text:`💀 ${m.by} derrubou ${m.nick}`}); break; }
+    case 'alive': { const r = remotes.get(m.id); if (r) r.dead = false; break; }
+    case 'kill': prof.kos = (prof.kos || 0) + 1; save(); toast(`💥 Você derrubou ${m.nick}! (${prof.kos})`); sfx('coin'); break;
+    case 'shot': spawnShot(m.x, m.y, m.z, m.dx, m.dz, WEAPON[m.w], m.c, false); sfx('shot'); break;
     case 'counts': NET.counts = m.c; NET.total = m.total; break;
     case 'sys': pushChat({kind:'sys', text:m.text}); break;
     case 'ads': ADS.list = (m.ads || []).filter(a => a && a.screen); drawTeloes(); break;
@@ -2606,12 +2703,12 @@ function netHandle(m) {
 function safeHeld(h) {
   if (!h) return null;
   if (h.type === 'flag' && FLAG[h.id]) return {type:'flag', id:h.id, text:filterBad(h.text || '')};
-  if (h.type === 'obj' && (OBJ[h.id] || h.id === 'taco')) return {type:'obj', id:h.id};
+  if (h.type === 'obj' && (OBJ[h.id] || h.id === 'taco' || /^w_(bastao|espada|pistola|paintball)$/.test(h.id))) return {type:'obj', id:h.id};
   if (h.type === 'cartaz') return {type:'cartaz', text:filterBad(String(h.text || 'PAZ')).slice(0, 42), bg:h.bg, fg:h.fg};
   return null;
 }
 function addRemote(p) {
-  const r = {id:p.id, real:true, nick:p.nick, team:TEAMS[0], premium:false, pvp:false, ko:0, pos:new V3(p.x || 0, p.y || 0, p.z || 0), tgt:new V3(p.x || 0, p.y || 0, p.z || 0), h:p.h || 0, th:p.h || 0, anim:'idle', veh:'pe', vm:null, c:null, tag:null, bubble:null, atk:0, ring:null};
+  const r = {id:p.id, real:true, nick:p.nick, team:TEAMS[0], premium:false, pvp:false, ko:0, dead:!!p.dead, pos:new V3(p.x || 0, p.y || 0, p.z || 0), tgt:new V3(p.x || 0, p.y || 0, p.z || 0), h:p.h || 0, th:p.h || 0, anim:'idle', veh:'pe', vm:null, c:null, tag:null, bubble:null, atk:0, ring:null};
   remotes.set(p.id, r); remoteLook(r, p); return r;
 }
 function remoteLook(r, p) {
@@ -2661,7 +2758,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last)/1000); last = now; T += dt;
   if (G.mode === 'play') updatePlayer(dt);
-  updateBots(dt); updateRemotes(dt); netTick(dt); updateTrios(dt); updateRace(dt); updateDebates(dt);
+  updateBots(dt); updateRemotes(dt); updateShots(dt); netTick(dt); updateTrios(dt); updateRace(dt); updateDebates(dt);
   for (let i = bubbles.length - 1; i >= 0; i--) { const e = bubbles[i]; if (!e.bubble) { bubbles.splice(i, 1); continue; } e.bubble.t -= dt; if (e.bubble.t <= 0) { disposeSprite(e.bubble.s); e.bubble = null; bubbles.splice(i, 1); } }
   for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.t -= dt; const a = p.p.geometry.attributes.position; p.vel.forEach((v, j) => { v.y -= 6*dt; a.array[j*3] += v.x*dt; a.array[j*3+1] += v.y*dt; a.array[j*3+2] += v.z*dt; }); a.needsUpdate = true; p.p.material.opacity = p.t/.7; if (p.t <= 0) { scene.remove(p.p); p.p.geometry.dispose(); p.p.material.dispose(); particles.splice(i, 1); } }
   if (markerMesh && markerMesh.visible) { markerMesh.userData.t -= dt; markerMesh.scale.setScalar(.5 + (1.2 - markerMesh.userData.t)*.4); markerMesh.scale.z = .2; if (markerMesh.userData.t <= 0 || !P.moveTarget) markerMesh.visible = false; }
@@ -2675,7 +2772,7 @@ function frame(now) {
   chatT -= dt; if (chatT <= 0) { chatT = rand(1.6, 4.2); if (G.mode !== 'lobby') botChatter(); }
   telT -= dt; if (telT <= 0) { telT = 5; G.telIdx++; drawTeloes(); }
   miniT -= dt; if (miniT <= 0 && G.mode !== 'lobby') { miniT = .07; drawMini(); }
-  uiT -= dt; if (uiT <= 0) { uiT = .25; uiTick(); }
+  uiT -= dt; if (uiT <= 0) { uiT = .25; uiTick(); renderDeath(); }
 }
 function uiTick() {
   const counts = teamOnline();
