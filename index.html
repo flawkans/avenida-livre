@@ -466,9 +466,9 @@ const VEH = [
   {id:'calango',  name:'Calango gigante',        em:'🦎', speed:9, price:200, r:1.4, cam:1.5, teams:['vm']},
   {id:'onca',     name:'Onça-pintada',           em:'🐆', speed:10, price:200, r:1.2, cam:1.4, teams:['pa']},
 ];
-const PREMIUM_PRICE = 10, SPRAY_FREE = 3;
+const PREMIUM_PRICE = 47.90, SPRAY_FREE = 3;
 // Link do checkout do Premium na Cakto (produto de pagamento único). O e-mail da conta vai junto para o Premium cair na conta certa.
-const CAKTO_CHECKOUT_URL = '';
+const CAKTO_CHECKOUT_URL = 'https://pay.cakto.com.br/bjkyuwr_1230226';
 const forTeam = it => !it.teams || it.teams.includes(prof.team);
 const STAMPS = [{id:'tag',name:'Seu nome'},{id:'coracao',name:'Coração'},{id:'estrela',name:'Estrela'},{id:'paz',name:'Paz'},{id:'time',name:'Time'},{id:'smile',name:'Sorriso'}];
 const SPRAYC = ['#ff3b6b','#ffd400','#1ec8ff','#39e06b','#ffffff','#ff7a1a','#b04bff','#111111'];
@@ -2406,9 +2406,15 @@ function openPremium(why) {
   const g = $('#goPrem'); if (g) g.onclick = () => {
     if (!can) return toast('O pagamento ainda está sendo configurado. Volte em breve!');
     if (!AUTH.user) { AUTH.after = () => openPremium(why); return openAuth('entrar', 'Entre na sua conta para o Premium cair nela.'); }
-    const url = CAKTO_CHECKOUT_URL + (CAKTO_CHECKOUT_URL.includes('?') ? '&' : '?') + 'email=' + encodeURIComponent(AUTH.user.email || '');
-    window.open(url, '_blank', 'noopener');
-    waitPremium();
+    // A Cakto não preenche o e-mail pelo link: mostra o e-mail da conta para a pessoa usar o mesmo no pagamento.
+    const mail = AUTH.user.email || '';
+    openModal(`<div class="kicker">Premium · ${money(PREMIUM_PRICE)}</div><h3>Antes de pagar</h3>
+    <p style="margin-top:6px">No pagamento, use <b>exatamente este e-mail</b>. É por ele que o Premium cai na sua conta:</p>
+    <div style="display:flex;gap:6px;margin-top:10px"><input id="pmMail" readonly value="${esc(mail)}"><button class="btn small" id="pmCopy">Copiar</button></div>
+    <p class="mut" style="font-size:12px;margin-top:10px">Pix cai em segundos; cartão, em poucos minutos. O jogo avisa sozinho quando o Premium for liberado.</p>
+    <button class="btn gold big" style="width:100%;margin-top:12px" id="pmGo">Ir para o pagamento</button>`);
+    $('#pmCopy').onclick = async () => { try { await navigator.clipboard.writeText(mail); toast('E-mail copiado ✓'); } catch (e) { $('#pmMail').select(); toast('Selecione e copie o e-mail'); } };
+    $('#pmGo').onclick = () => { window.open(CAKTO_CHECKOUT_URL, '_blank', 'noopener'); waitPremium(); };
   };
 }
 const openPasses = () => openPremium();
