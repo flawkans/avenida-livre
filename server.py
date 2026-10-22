@@ -23,7 +23,7 @@ GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
 MAPS = {'paulista', 'copacabana', 'esplanada'}
 TEAMS = {'va', 'vm', 'pa'}
-VEHICLES = {'pe', 'carro', 'roadster', 'carreta', 'dirigivel', 'moto', 'chopper', 'girafa', 'dino',
+VEHICLES = {'pe', 'carro', 'caixa', 'roadster', 'carreta', 'dirigivel', 'moto', 'chopper', 'girafa', 'dino',
             'calango', 'onca', 'pipoca', 'somcar', 'som'}
 ANIMS = {'idle', 'walk', 'run', 'push', 'pedal', 'dance', 'wave', 'clap', 'sit', 'sitground', 'ride',
          'stand', 'jump', 'spray', 'ko'}
@@ -31,12 +31,60 @@ STAMPS = {'tag', 'coracao', 'estrela', 'paz', 'time', 'smile'}
 BAD = ['idiota', 'burro', 'lixo', 'otario', 'otário', 'imbecil', 'merda', 'porra', 'caralho', 'fdp',
        'vagabundo', 'vagabunda']
 STATIC_EXT = {'.html', '.css', '.js', '.png', '.jpg', '.jpeg', '.webp', '.svg', '.ico', '.json', '.woff2', '.mp3', '.ogg'}
-MAX_FRAME = 64 * 1024
+MAX_FRAME = 1024 * 1024        # 1 MB: cabe a imagem de um anúncio
 MAX_PER_ROOM = 300
 TICK = 0.1
 
+# Anúncios nos telões (regras do original): lance mínimo por telão, 5 vagas por telão ordenadas pelo valor,
+# cada anúncio fica garantido 2 h nas vagas e dura até 20 dias. Link só a partir de R$ 250.
+ADS_DIR = os.path.join(ROOT, 'ads')
+ADS_FILE = os.path.join(ADS_DIR, 'ads.json')
+AD_FLOOR_DEFAULT = 500
+AD_FLOORS = {'masp-principal': 1000, 'haddock-lobo': 250, 'bela-cintra': 250}
+AD_LINK_MIN = 250
+AD_MAX = 10000
+AD_SLOTS = 5
+AD_PROTECT_S = 2 * 3600
+AD_LIFETIME_S = 20 * 24 * 3600
+AD_IMG_MAX = 700 * 1024
+
 conns = set()
 _next_id = 1
+ads = []
+
+
+def load_ads():
+    global ads
+    try:
+        with open(ADS_FILE, encoding='utf-8') as f:
+            ads = json.load(f)
+    except (OSError, ValueError):
+        ads = []
+
+
+def save_ads():
+    os.makedirs(ADS_DIR, exist_ok=True)
+    tmp = ADS_FILE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(ads, f, ensure_ascii=False)
+    os.replace(tmp, ADS_FILE)
+
+
+def active_ads():
+    """Até 5 anúncios por telão: os protegidos (primeiras 2 h) entram primeiro, depois os maiores lances."""
+    now = time.time()
+    live = [a for a in ads if now - a['since'] < AD_LIFETIME_S]
+    out = []
+    for screen in {a['screen'] for a in live}:
+        lst = sorted((a for a in live if a['screen'] == screen), key=lambda a: -a['amount'])
+        prot = [a for a in lst if now - a['since'] < AD_PROTECT_S][:AD_SLOTS]
+        rest = [a for a in lst if a not in prot][:max(0, AD_SLOTS - len(prot))]
+        out += sorted(prot + rest, key=lambda a: -a['amount'])
+    return out
+
+
+def ads_msg():
+    return {'t': 'ads', 'ads': [{k: a[k] for k in ('id', 'screen', 'nick', 'amount', 'kind', 'img', 'title', 'sub', 'bg', 'fg', 'link', 'since')} for a in active_ads()]}
 
 
 def clean_text(s, n):
@@ -246,11 +294,12 @@ def handle(c, m):
                            'stamp': m.get('stamp') if m.get('stamp') in STAMPS else 'tag', 'color': color,
                            'nick': c.p['nick'], 'team': c.p['team']}, exclude=c)
     elif t == 'super' and c.p:
-        amount = m.get('amount') if m.get('amount') in (2, 5, 10, 20) else 2
-        text = clean_text(m.get('text'), 90)
+        amount = int(num(m.get('amount'), 5, 1000, 5))
+        voice = m.get('voice') if m.get('voice') in ('homem', 'mulher', 'tiozao') and amount >= 10 else None
+        text = clean_text(m.get('text'), 200)
         if text:
             broadcast(c.room, {'t': 'super', 'id': c.id, 'nick': c.p['nick'], 'team': c.p['team'], 'text': text,
-                               'amount': amount, 'prem': c.p['prem']}, exclude=c)
+                               'amount': amount, 'voice': voice, 'prem': c.p['prem']}, exclude=c)
     elif t == 'hit' and c.p:
         if now - c.hit_t < 0.3:
             return
@@ -261,11 +310,52 @@ def handle(c, m):
         if (target.p['x'] - c.p['x']) ** 2 + (target.p['z'] - c.p['z']) ** 2 > 3.5 ** 2:
             return
         target.send({'t': 'dmg', 'from': c.id, 'nick': c.p['nick'], 'amount': random.randint(22, 32)})
+    elif t == 'ad':
+        handle_ad(c, m)
     elif t == 'report':
         line = {'time': time.strftime('%Y-%m-%d %H:%M:%S'), 'by': c.p['nick'] if c.p else None,
                 'target': clean_text(m.get('nick'), 16), 'text': clean_text(m.get('text'), 160)}
         with open(os.path.join(ROOT, 'denuncias.log'), 'a', encoding='utf-8') as f:
             f.write(json.dumps(line, ensure_ascii=False) + '\n')
+
+
+def handle_ad(c, m):
+    screen = m.get('screen')
+    if not isinstance(screen, str) or not re.fullmatch(r'[a-z0-9-]{1,40}', screen):
+        return c.send({'t': 'adFail', 'msg': 'Telão inválido.'})
+    floor = AD_FLOORS.get(screen, AD_FLOOR_DEFAULT)
+    amount = int(num(m.get('amount'), 0, AD_MAX))
+    if amount < floor:
+        return c.send({'t': 'adFail', 'msg': f'O lance mínimo deste telão é R$ {floor}.'})
+    nick = (c.p or {}).get('nick') or clean_text(m.get('nick'), 16) or 'Anunciante'
+    link = clean_text(m.get('link'), 300)
+    if link and (amount < AD_LINK_MIN or not re.fullmatch(r'https?://[^\s@]+\.[^\s@]+', link)):
+        link = ''
+    hexc = lambda v, d: v if isinstance(v, str) and re.fullmatch(r'#[0-9a-fA-F]{6}', v) else d
+    ad = {'id': base64.urlsafe_b64encode(os.urandom(9)).decode(), 'screen': screen, 'nick': nick, 'amount': amount,
+          'kind': 'text', 'img': None, 'title': clean_text(m.get('title'), 40), 'sub': clean_text(m.get('sub'), 60),
+          'bg': hexc(m.get('bg'), '#ecd27e'), 'fg': hexc(m.get('fg'), '#14201a'), 'link': link, 'since': time.time()}
+    img = m.get('img')
+    if isinstance(img, str) and img.startswith('data:image/jpeg;base64,'):
+        try:
+            raw = base64.b64decode(img.split(',', 1)[1], validate=True)
+        except ValueError:
+            raw = b''
+        if not raw.startswith(b'\xff\xd8') or len(raw) > AD_IMG_MAX:
+            return c.send({'t': 'adFail', 'msg': 'Imagem inválida ou grande demais.'})
+        os.makedirs(ADS_DIR, exist_ok=True)
+        name = hashlib.sha1(raw).hexdigest()[:24] + '.jpg'
+        with open(os.path.join(ADS_DIR, name), 'wb') as f:
+            f.write(raw)
+        ad['kind'], ad['img'] = 'image', 'ads/' + name
+    elif not ad['title']:
+        return c.send({'t': 'adFail', 'msg': 'Envie uma imagem ou escreva um título.'})
+    ads.append(ad)
+    save_ads()
+    c.send({'t': 'adOk', 'id': ad['id']})
+    msg = ads_msg()
+    for o in conns:
+        o.send(msg)
 
 
 async def writer_loop(c):
@@ -289,6 +379,7 @@ async def ws_session(reader, writer, headers):
     wtask = asyncio.create_task(writer_loop(c))
     c.send({'t': 'welcome', 'id': c.id})
     c.send(counts())
+    c.send(ads_msg())
     try:
         buf = b''
         while True:
@@ -390,9 +481,14 @@ async def tick_loop():
             msg = counts()
             for c in conns:
                 c.send(msg)
+        if n % 600 == 0:  # a cada minuto, tira os anúncios vencidos dos telões
+            msg = ads_msg()
+            for c in conns:
+                c.send(msg)
 
 
 async def main():
+    load_ads()
     server = await asyncio.start_server(on_client, HOST, PORT)
     asyncio.create_task(tick_loop())
     print(f'Avenida Livre rodando em http://localhost:{PORT}  (Ctrl+C para parar)', flush=True)

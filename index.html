@@ -296,15 +296,97 @@ const CHARS = [
   {id:'velha',  name:'Velha',        g:'f', hair:'bun', old:1, hairFix:'#dadada', glasses:'clear', teams:['vm']},
   {id:'jovem',  name:'Jovem Missão', g:'m', hair:'spiky', backpack:1, teams:['pa']},
   {id:'jovemf', name:'Jovem Missão feminina', g:'f', hair:'pony', backpack:1, teams:['pa']},
-  {id:'flavio', name:'Flávio Hipotético',  g:'m', hair:'short', special:'flavio', price:30, hairFix:'#2a1d14'},
-  {id:'lula',   name:'Lula Prime',         g:'m', hair:'short', special:'lula', price:30, hairFix:'#bdbdbd'},
-  {id:'bolso',  name:'Bolsonaro com peixe',g:'m', hair:'short', special:'bolso', price:30, hairFix:'#6b6b6b'},
-  {id:'renan',  name:'Renan Santos',       g:'m', hair:'short', special:'renan', price:30, hairFix:'#1d1510', glasses:'clear'},
-  {id:'ana',    name:'Ana Hering',         g:'f', hair:'long', special:'ana', price:30, hairFix:'#e3c27a'},
-  {id:'xandao', name:'Super Xandão',       g:'m', hair:'bald', special:'xandao', price:30, hairFix:'#e9c3a0'},
-  {id:'renato', name:'Renato Battista',    g:'m', hair:'short', special:'renato', price:30, hairFix:'#3a2a1c'},
-  {id:'kim',    name:'Kim Kataguiri',      g:'m', hair:'short', special:'kim', price:30, hairFix:'#0e0b0a', glasses:'clear'},
 ];
+/* Personagens especiais (loja · R$ 30 cada, todos os times). Visual próprio, montado em blocos a partir desta ficha:
+   g gênero · sk pele · h cabelo · hc cor do cabelo · b barba 0-5 · bc cor da barba · gl óculos · hat [tipo, cor]
+   top [tipo, cor, cor de dentro, texto] · tie gravata · leg [tipo, cor] · sh sapato · x extras · hold item na mão · sc escala */
+const SPECIALS = [
+  ['bolso','Bolsonaro com peixe','politicos',{sk:'#efc9a8',h:'slick',hc:'#6b6b6b',top:['shirtBR'],leg:['pants','#55585e'],sh:'#222',x:['sashBR'],hold:'fish',pop:1}],
+  ['flavio','Flávio Hipotético','historia',{sk:'#e9c3a0',h:'short',hc:'#2a1d14',top:['suit','#1f2a44','#ffffff'],tie:'#1e9b45',leg:['pants','#1f2a44'],sh:'#111',x:['pin22'],pop:1}],
+  ['kogos','Kogos','influenciadores',{sk:'#e9c3a0',h:'short',hc:'#2a1d14',b:4,gl:'clear',top:['tee','#151515'],leg:['pants','#2f3b55'],sh:'#111',pop:1}],
+  ['kim','Kim Kataguiri','politicos',{sk:'#ecc9a5',h:'short',hc:'#0e0b0a',gl:'clear',top:['suit','#1c2440','#ffffff'],tie:'#7a1f2a',leg:['pants','#1c2440'],sh:'#111',pop:1}],
+  ['eneas','Enéas','politicos',{sk:'#e7b892',h:'bald',hc:'#111',b:5,bc:'#111',gl:'thick',top:['suit','#2a2a2e','#ffffff'],tie:'#9b1b1b',leg:['pants','#2a2a2e'],sh:'#111',pop:1}],
+  ['olavo','Olavo','historia',{sk:'#e7b892',h:'short',hc:'#9a9a9a',b:3,bc:'#b5b5b5',gl:'clear',hat:['fedora','#6b4a2a'],top:['jacket','#5a3a22','plaid'],leg:['pants','#3a3a3a'],sh:'#3a2a1a',pop:1}],
+  ['nikole','Nikole','streamers',{g:'f',sk:'#f0cdb0',h:'long',hc:'#2a1a12',top:['hoodie','#e86aa8'],leg:['pants','#2a2a33'],sh:'#ffffff',pop:1}],
+  ['trump','Trump','politicos',{sk:'#efb88a',h:'swoop',hc:'#e5c46b',top:['suit','#1b2440','#ffffff'],tie:'#c4161c',leg:['pants','#1b2440'],sh:'#111',pop:1}],
+  ['peter','Peter Ancapsu','influenciadores',{sk:'#e7b892',h:'short',hc:'#8e8e8e',b:5,bc:'#a9a9a9',gl:'clear',top:['jacket','#6b3f1e','#222222'],leg:['pants','#33507a'],sh:'#3a2a1a',pop:1}],
+  ['esqueleto','Esqueleto','historia',{sk:'#e8e3d3',h:'none',top:['skeleton','#e8e3d3'],leg:['bones','#e8e3d3'],sh:'#e8e3d3',x:['skull'],pop:1}],
+  ['gabi','Gabi Murphy','streamers',{g:'f',sk:'#f0cdb0',h:'long',hc:'#7a2a1a',top:['armor','#b3262b','#c08a3e'],leg:['skirt','#b3262b'],sh:'#5a3a20',hold:'swords',pop:1}],
+  ['bostileiro','Bostileiro','historia',{sk:'#cf9a6e',h:'short',hc:'#3a2417',b:3,bc:'#3a2417',top:['tee','#6b4a2a','','BOSTIL'],leg:['pants','#3a3a3a'],sh:'#222'}],
+  ['alborghetti','Alborghetti','historia',{sk:'#e7b892',h:'short',hc:'#cfcfcf',gl:'clear',top:['vest','#9ec8e8','#151515'],leg:['pants','#2a2a2e'],sh:'#111',x:['towel']}],
+  ['raiam','Raiam Santos','influenciadores',{sk:'#ad7349',h:'buzz',hc:'#151110',top:['tee','#f2f2f2'],leg:['shorts','#151515'],sh:'#ffffff',x:['chain']}],
+  ['renato38','Renato 38','politicos',{sk:'#e7b892',h:'short',hc:'#3a2417',gl:'yellow',top:['polo','#1c2440'],leg:['pants','#33507a'],sh:'#111'}],
+  ['che','Che Guevara','historia',{sk:'#e7b892',h:'long',hc:'#2a1a12',b:3,bc:'#2a1a12',hat:['beret','#151515'],top:['uniform','#4f5a33'],leg:['pants','#4f5a33'],sh:'#2a2a2a'}],
+  ['jailson','Jailson Mendes','historia',{sk:'#cf9a6e',h:'bald',hc:'#2a1a12',b:3,bc:'#2a1a12',top:['openshirt','#c9d4e8','stripes'],leg:['pants','#33507a'],sh:'#6b4428'}],
+  ['mamaefalei','Mamãe Falei','politicos',{sk:'#e9c3a0',h:'short',hc:'#3a2417',top:['tee','#151515','','MAMÃE FALEI'],leg:['pants','#2a2a33'],sh:'#ffffff'}],
+  ['nikolas','Nikolas Ferreira','politicos',{sk:'#ecc9a5',h:'slick',hc:'#3a2417',top:['blazer','#1c2440','#ffffff'],leg:['pants','#1c2440'],sh:'#111'}],
+  ['sakura','Sakura','streamers',{g:'f',sk:'#f3d3b8',h:'pigtails',hc:'#f2f2f2',top:['dress','#2b5bd6','#e6b800'],leg:['skirt','#2b5bd6'],sh:'#ffffff',x:['clown','bows']}],
+  ['xandao','Super Xandão','historia',{sk:'#e9c3a0',h:'bald',hc:'#e9c3a0',top:['robe','#121212','#f6d31c'],leg:['pants','#121212'],sh:'#111',x:['capeBlack','headphones','emblemX','mask']}],
+  ['chief117','Chief 117','streamers',{sk:'#e7b892',h:'buzz',hc:'#3a2417',top:['armor','#4a6b2a','#2a3a1a'],leg:['armorLegs','#4a6b2a'],sh:'#2a3a1a',x:['gloves']}],
+  ['dpedro','D. Pedro II','historia',{sk:'#efc9a8',h:'short',hc:'#d8d8d8',b:4,bc:'#e2e2e2',top:['uniform','#151515','#d4af37'],leg:['pants','#151515'],sh:'#111',x:['sashGreen','epaulettes','medals']}],
+  ['hang','Luciano Hang','politicos',{sk:'#efc9a8',h:'bald',hc:'#efc9a8',top:['suit','#1e7a3a','#ffffff'],tie:'#f6d31c',leg:['pants','#1e7a3a'],sh:'#111'}],
+  ['lula','Lula Prime','politicos',{sk:'#e2b48e',h:'short',hc:'#bdbdbd',b:4,bc:'#c4c4c4',top:['suit','#34343c','#ffffff'],tie:'#d81f26',leg:['pants','#34343c'],sh:'#111',x:['pinStar']}],
+  ['joaquin','Joaquin Teixeira','influenciadores',{sk:'#e7b892',h:'messy',hc:'#3a2417',top:['tee','#2b2b2b'],leg:['pants','#33507a'],sh:'#ffffff'}],
+  ['marx','Karl Marx','historia',{sk:'#efc9a8',h:'big',hc:'#ededed',b:5,bc:'#ededed',top:['coat','#151515','#ffffff'],leg:['pants','#151515'],sh:'#111'}],
+  ['kimpaim','Kim Paim','influenciadores',{sk:'#e9c3a0',h:'short',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['tee','#1e3a5a'],leg:['pants','#2a2a33'],sh:'#111'}],
+  ['michelle','Michelle Bolsonaro','politicos',{g:'f',sk:'#e9c3a0',h:'long',hc:'#2a1a12',top:['tee','#f19ac0'],leg:['pants','#33507a'],sh:'#ffffff'}],
+  ['monark','Monark','influenciadores',{sk:'#ecc9a5',h:'short',hc:'#3a2417',b:4,bc:'#3a2417',top:['tee','#151515'],leg:['pants','#7a7a7a'],sh:'#111'}],
+  ['papahw','Papa Hardware','influenciadores',{sk:'#e7b892',h:'short',hc:'#3a2417',b:5,bc:'#6b4428',gl:'tortoise',top:['tee','#151515','','PRIVATIZE'],leg:['shorts','#7a7a7a'],sh:'#2b8a5a'}],
+  ['allan','Allan dos Santos','influenciadores',{sk:'#e7b892',h:'bald',hc:'#e7b892',b:3,bc:'#9a9a9a',gl:'thick',top:['suit','#3a3a40','#ffffff'],tie:'#111111',leg:['pants','#3a3a40'],sh:'#111'}],
+  ['bolsohip','Bolsonarista Hipotética','historia',{g:'f',sk:'#e9c3a0',h:'long',hc:'#f2e6c8',top:['croptop','#ffffff','palms'],leg:['mini','#ffffff'],sh:'#ffffff',x:['goldNecklace','hoops']}],
+  ['coca','Coca','streamers',{sk:'#e7b892',h:'short',hc:'#2a1d14',b:2,bc:'#2a1d14',gl:'clear',top:['gi','#f07a12','#2253d6'],leg:['pants','#2253d6'],sh:'#2253d6',x:['headphones']}],
+  ['eduarda','Eduarda Campopiano','influenciadores',{g:'f',sk:'#f3d3b8',h:'long',hc:'#6b4428',top:['tee','#ffffff'],leg:['pants','#33507a'],sh:'#ffffff'}],
+  ['elon','Elon Musk','artistas',{sk:'#efc9a8',h:'messy',hc:'#2a1d14',top:['tux','#1b2440','#ffffff'],leg:['pants','#1b2440'],sh:'#111'}],
+  ['leolins','Léo Lins','influenciadores',{sk:'#e9c3a0',h:'short',hc:'#6b4428',top:['longcoat','#151515','#6b1a2a'],tie:'#d4af37',leg:['pants','#151515'],sh:'#111'}],
+  ['loen','Loen','streamers',{sk:'#e7b892',h:'short',hc:'#2a1d14',b:4,bc:'#2a1d14',hat:['beanie','#151515'],top:['tee','#151515'],leg:['shorts','#151515'],sh:'#ffffff',x:['tattooArms']}],
+  ['pavanato','Lucas Pavanato','politicos',{sk:'#ecc9a5',h:'short',hc:'#3a2417',top:['suit','#2a3550','#ffffff'],tie:'#1e7a3a',leg:['pants','#2a3550'],sh:'#111'}],
+  ['martina','Martina Oliveira','influenciadores',{g:'f',sk:'#f3d3b8',h:'fringe',hc:'#2a1a12',top:['tank','#ffffff'],leg:['skirt','#c4161c'],sh:'#8a8a8a',x:['tattooArms']}],
+  ['mirella','MC Mirella','artistas',{g:'f',sk:'#cf9a6e',h:'long',hc:'#151110',top:['shirtBR'],leg:['pants','#151515'],sh:'#ffffff',x:['tattooArms']}],
+  ['maduro','Nicolás Maduro','politicos',{sk:'#cf9a6e',h:'short',hc:'#151110',b:1,bc:'#151110',top:['suit','#151515','#ffffff'],tie:'#c4161c',leg:['pants','#151515'],sh:'#111',x:['sashVE']}],
+  ['tupirani','Pastor Tupirani','influenciadores',{sk:'#e7b892',h:'short',hc:'#9a9a9a',gl:'clear',top:['tee','#151515','','NÃO SOU VACINADO.'],leg:['pants','#33507a'],sh:'#111'}],
+  ['renan','Renan Santos','politicos',{sk:'#e9c3a0',h:'short',hc:'#1d1510',b:3,bc:'#1d1510',gl:'clear',top:['tee','#161616','','MISSÃO'],leg:['pants','#2a2a2a'],sh:'#ffffff'}],
+  ['renanplay','RenanPlay','streamers',{sk:'#e7b892',h:'short',hc:'#2a1d14',top:['hoodie','#c4161c'],leg:['pants','#2a2a33'],sh:'#ffffff',x:['headphones']}],
+  ['renato','Renato Battista','streamers',{sk:'#e7b892',h:'short',hc:'#3a2a1c',b:2,bc:'#3a2a1c',top:['suit','#3f4c63','#ffffff'],tie:'#2c4a8a',leg:['pants','#3f4c63'],sh:'#111'}],
+  ['tchiorro','Rodrigo Tchiorro','influenciadores',{sk:'#e7b892',h:'buzz',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['tee','#2a2a2a'],leg:['shorts','#3a3a3a'],sh:'#111',sc:1.36}],
+  ['rony','Rony Gabriel','influenciadores',{sk:'#e9c3a0',h:'quiff',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['tee','#ffffff','','PEGA A PIPOCA'],leg:['pants','#33507a'],sh:'#ffffff'}],
+  ['serafim','Serafim','historia',{sk:'#efc9a8',h:'slick',hc:'#151515',gl:'clear',top:['suit','#151515','#ffffff'],tie:'#111111',leg:['pants','#151515'],sh:'#111',x:['theater']}],
+  ['tragicomico','Tragicômico','streamers',{sk:'#f0d2bc',h:'fringe',hc:'#111111',top:['vest','#3a3a3a','#151515'],leg:['pants','#33507a'],sh:'#151515',x:['chainBelt']}],
+  ['anaclara','Ana Clara Milinski','influenciadores',{g:'f',sk:'#f3d3b8',h:'long',hc:'#e3c27a',top:['sweater','#f2a5c4'],leg:['pants','#8fb3d6'],sh:'#ffffff',x:['scarf']}],
+  ['ana','Ana Hering','influenciadores',{g:'f',sk:'#f3d3b8',h:'long',hc:'#e3c27a',top:['blazer','#f0ede6','#d9c3a0'],leg:['pants','#1d1d22'],sh:'#111'}],
+  ['andrealba','André Alba','artistas',{sk:'#cf9a6e',h:'short',hc:'#151110',top:['jersey','#ffffff','#111111','10'],leg:['shorts','#ffffff'],sh:'#111'}],
+  ['bigdogs','Antônio BigDogs','influenciadores',{sk:'#e7b892',h:'short',hc:'#2a1d14',gl:'aviator',top:['tee','#ffffff','','REAL OFICIAL'],leg:['shorts','#8a8a8a'],sh:'#111'}],
+  ['biologo','Biólogo Henrique','influenciadores',{sk:'#e7b892',h:'short',hc:'#8e8e8e',b:4,bc:'#a9a9a9',top:['tee','#151515'],leg:['pants','#33507a'],sh:'#111',x:['warpaint','boneNecklace']}],
+  ['byanu','Byanu','streamers',{sk:'#e7b892',h:'messy',hc:'#151110',top:['hoodie','#5a2a8a'],leg:['pants','#2a2a33'],sh:'#ffffff',x:['headphones']}],
+  ['zambelli','Carla Zambelli','politicos',{g:'f',sk:'#f3d3b8',h:'curly',hc:'#b2502a',top:['tee','#1e9b45','flagBR'],leg:['pants','#2a3550'],sh:'#111',x:['earrings']}],
+  ['chief','Chief','streamers',{sk:'#cf9a6e',h:'buzz',hc:'#151110',b:3,bc:'#151110',top:['hoodie','#2a2a2a'],leg:['pants','#2a2a33'],sh:'#111'}],
+  ['danielnyt','Daniel NYT','influenciadores',{sk:'#e9c3a0',h:'short',hc:'#2a1d14',gl:'clear',top:['shirt','#ffffff'],leg:['pants','#2a3550'],sh:'#111'}],
+  ['debs','Debs','streamers',{g:'f',sk:'#f3d3b8',h:'pigtails',hc:'#cfd3dc',top:['coat','#f2f2f2','#d4af37'],leg:['skirt','#151515'],sh:'#6b4428',x:['elfEars','redGems']}],
+  ['dex','Dex','streamers',{sk:'#e7b892',h:'messy',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['suit','#151515','#151515'],leg:['pants','#151515'],sh:'#111',x:['redEyes']}],
+  ['sestaro','Dr. Felipe Sestaro','influenciadores',{sk:'#e7b892',h:'short',hc:'#f2e6c8',b:3,bc:'#2a1d14',top:['bare'],leg:['shorts','#151515'],sh:'#111',x:['muscle']}],
+  ['eduardo','Eduardo','influenciadores',{sk:'#e7b892',h:'short',hc:'#6b6b6b',b:3,bc:'#8e8e8e',gl:'thick',top:['jacket','#151515','#151515'],leg:['pants','#2a3550'],sh:'#111'}],
+  ['flaviogarage','Flávio Garage','streamers',{sk:'#ecc9a5',h:'short',hc:'#f2e6c8',top:['tee','#151515'],leg:['pants','#151515'],sh:'#111',x:['tattooArms']}],
+  ['piauhy','Gabriel Piauhy','influenciadores',{sk:'#e7b892',h:'buzz',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['blazer','#151515','#151515'],leg:['pants','#151515'],sh:'#111',sc:1.08}],
+  ['gilbrother','Gil Brother','historia',{sk:'#7f4f2f',h:'dreads',hc:'#151110',gl:'sun',top:['tank','#151515','','PAZ'],leg:['pants','#8fb3d6'],sh:'#111'}],
+  ['gorgonoid','Gorgonoid','streamers',{sk:'#e7b892',h:'messy',hc:'#3a2417',gl:'clear',top:['hoodie','#2a5a3a'],leg:['pants','#2a2a33'],sh:'#ffffff',x:['headphones']}],
+  ['zanatta','Júlia Zanatta','politicos',{g:'f',sk:'#f3d3b8',h:'long',hc:'#b48a5a',top:['dirndl','#2e7a3e','#ffffff'],leg:['skirt','#2e7a3e'],sh:'#111',x:['flowerCrown','apron']}],
+  ['juniormasters','Junior Masters','influenciadores',{sk:'#cf9a6e',h:'short',hc:'#151110',top:['polo','#2a2a2a'],leg:['pants','#2a3550'],sh:'#111'}],
+  ['kodhak','Kodhak','streamers',{sk:'#e7b892',h:'short',hc:'#2a1d14',b:4,bc:'#2a1d14',hat:['beanie','#151515'],top:['jacket','#2a2a2a','#151515'],leg:['pants','#2a2a33'],sh:'#111'}],
+  ['luangameplay','Luan Gameplay','streamers',{sk:'#cf9a6e',h:'short',hc:'#151110',top:['tee','#151515','','GAMEPLAY'],leg:['pants','#33507a'],sh:'#111',x:['tattooArms']}],
+  ['miorim','Miorim','influenciadores',{sk:'#e7b892',h:'curly',hc:'#2a1d14',gl:'thick',top:['blazer','#151515','#1c2440'],leg:['pants','#33507a'],sh:'#111'}],
+  ['marcal','Pablo Marçal','politicos',{sk:'#e7b892',h:'short',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['blazer','#2253d6','#ffffff'],leg:['pants','#2253d6'],sh:'#111'}],
+  ['penelope','Penélope Nova','influenciadores',{g:'f',sk:'#f3d3b8',h:'braid',hc:'#3a2417',top:['jacket','#a8743a','#151515'],leg:['pants','#2a3550'],sh:'#111'}],
+  ['pistolinha','Pistolinha','influenciadores',{sk:'#cf9a6e',h:'slick',hc:'#151110',b:2,bc:'#151110',top:['bare'],leg:['shorts','#151515'],sh:'#151515',x:['chain','tattooArms','tattooChest']}],
+  ['rafaeldev','Rafael (Dev)','influenciadores',{sk:'#ecc9a5',h:'short',hc:'#6b4428',gl:'clear',top:['tee','#7a8ea6'],leg:['pants','#8a8a8a'],sh:'#ffffff'}],
+  ['cariani','Renato Cariani','influenciadores',{sk:'#e7b892',h:'buzz',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['tee','#151515'],leg:['pants','#2a2a2a'],sh:'#111',x:['muscle','tattooRight']}],
+  ['moicano','Renato Moicano','artistas',{sk:'#e7b892',h:'buzz',hc:'#2a1d14',b:2,bc:'#2a1d14',top:['bare'],leg:['shorts','#f6d31c'],sh:'#e7b892',x:['muscle','tattooArms','tattooChest','gloves']}],
+  ['selvagem','Richard Selvagem','influenciadores',{sk:'#cf9a6e',h:'short',hc:'#2a1d14',b:3,bc:'#2a1d14',top:['hawaii','#2b8a8a'],leg:['shorts','#6b6b4a'],sh:'#5a3a20',x:['tattooArms'],sc:1.08}],
+  ['vilela','Rogério Vilela','influenciadores',{sk:'#e7b892',h:'big',hc:'#6b4428',b:4,bc:'#6b4428',gl:'aviator',top:['openshirt','#151515','#151515'],leg:['pants','#151515'],sh:'#111'}],
+  ['tallis','Tallis Gomes','influenciadores',{sk:'#ecc9a5',h:'short',hc:'#2a1d14',gl:'thick',top:['suit','#1c2440','#ffffff'],tie:'#6b1a2a',leg:['pants','#1c2440'],sh:'#111'}],
+  ['tiowill','Tio Will','influenciadores',{sk:'#e7b892',h:'bald',hc:'#e7b892',b:4,bc:'#2a1d14',gl:'sun',top:['tee','#151515'],leg:['pants','#151515'],sh:'#111'}],
+  ['tomaltman','Tom Altman','influenciadores',{sk:'#e7b892',h:'curly',hc:'#3a2417',b:3,bc:'#3a2417',top:['polo','#151515'],leg:['pants','#2a3550'],sh:'#111'}],
+];
+for (const [id, name, cat, sp] of SPECIALS) CHARS.push({id, name, g:sp.g || 'm', cat, special:sp, price:30, pop:!!sp.pop});
+const CHAR_CATS = [['todos','Todos'],['politicos','Políticos'],['historia','História'],['influenciadores','Influenciadores'],['streamers','Streamers'],['artistas','Artistas']];
 const SHIRTS = [
   {id:'brasil', name:'Brasil', teams:['va']},{id:'brasil22', name:'Brasil 22', teams:['va']},{id:'verde22', name:'Verde 22', teams:['va']},
   {id:'f22', name:'Flávio Bolsonaro 22', teams:['va']},{id:'capitao', name:'★ Capitão', teams:['va']},{id:'bomdia', name:'☀ Bom dia, grupo!', teams:['va']},
@@ -328,26 +410,30 @@ const FLAGS = [
 const OBJS = [{id:'biblia',name:'Bíblia'},{id:'pneu',name:'Pneu'},{id:'livro',name:'Livro Amarelo · Missão'},{id:'constituicao',name:'Constituição'},{id:'livrog',name:'Livro'},{id:'detergente',name:'Detergente Ypê'},{id:'sorvete',name:'Sorvete',price:2},{id:'carteira',name:'Carteira de trabalho'}];
 const VEH = [
   {id:'pe',       name:'A pé',             key:'1', em:'🚶'},
+  // prem: liberado pelo Premium · price: compra avulsa (R$) · todos liberados pelos passes Garagem e Total
   {id:'carro',    name:'Carro',            key:'2', em:'🚗', speed:17, prem:1, r:1.3, race:1},
-  {id:'roadster', name:'Tesla Roadster',         em:'🏎️', speed:24, pass:1, r:1.3, race:1},
-  {id:'carreta',  name:'Carreta',          key:'9', em:'🚚', speed:12, pass:1, r:2.2, cam:1.7},
-  {id:'dirigivel',name:'Dirigível',        key:'0', em:'🎈', speed:10, pass:1, fly:1, cam:2.4},
-  {id:'moto',     name:'Moto',             key:'K', em:'🏍️', speed:18, prem:1, r:.7, race:1},
-  {id:'chopper',  name:'Chopper',          key:'J', em:'🛵', speed:16, pass:1, r:.8, race:1},
-  {id:'girafa',   name:'Bicicleta Girafa',       em:'🚲', speed:7, r:.7, teams:['va']},
-  {id:'dino',     name:'Dinossauro',             em:'🦖', speed:9, pass:1, r:1.4, cam:1.5, teams:['va']},
-  {id:'calango',  name:'Calango gigante',        em:'🦎', speed:9, pass:1, r:1.4, cam:1.5, teams:['vm']},
-  {id:'onca',     name:'Onça-pintada',           em:'🐆', speed:10, pass:1, r:1.2, cam:1.4, teams:['pa']},
-  {id:'pipoca',   name:'Carrinho de Pipoca',     em:'🍿', speed:3.8, r:.9},
-  {id:'somcar',   name:'Carro de som',     key:'M', em:'🔊', speed:12, prem:1, r:1.3, race:1},
-  {id:'som',      name:'Caminhão de som',        em:'📢', speed:7, pass:1, r:2, cam:1.6, race:1},
+  {id:'moto',     name:'Moto',             key:'K', em:'🏍️', speed:18, prem:1, price:3, r:.7, race:1},
+  {id:'caixa',    name:'Caixa de som',     key:'B', em:'📻', speed:4.3, prem:1, price:10, r:.6, music:1},
+  {id:'chopper',  name:'Chopper',          key:'J', em:'🛵', speed:16, price:5, r:.8, race:1},
+  {id:'pipoca',   name:'Carrinho de Pipoca',     em:'🍿', speed:3.8, price:10, r:.9},
+  {id:'girafa',   name:'Bicicleta Girafa',       em:'🚲', speed:7, price:17, r:.7, teams:['va']},
+  {id:'carreta',  name:'Carreta',          key:'9', em:'🚚', speed:12, price:30, r:2.2, cam:1.7},
+  {id:'somcar',   name:'Carro de som',     key:'M', em:'🔊', speed:12, price:40, r:1.3, race:1, music:1},
+  {id:'dirigivel',name:'Dirigível',        key:'0', em:'🎈', speed:10, price:50, fly:1, cam:2.4},
+  {id:'som',      name:'Caminhão de som',        em:'📢', speed:7, price:100, r:2, cam:1.6, race:1, music:1},
+  {id:'roadster', name:'Tesla Roadster',         em:'🏎️', speed:24, price:200, r:1.3, race:1},
+  {id:'dino',     name:'Dinossauro',             em:'🦖', speed:9, price:200, r:1.4, cam:1.5, teams:['va']},
+  {id:'calango',  name:'Calango gigante',        em:'🦎', speed:9, price:200, r:1.4, cam:1.5, teams:['vm']},
+  {id:'onca',     name:'Onça-pintada',           em:'🐆', speed:10, price:200, r:1.2, cam:1.4, teams:['pa']},
 ];
+const PREMIUM_PRICE = 10, PVP_PRICE = 5, SPRAY_REFILL = {price:5, charges:3}, SPRAY_FREE = 3;
 const forTeam = it => !it.teams || it.teams.includes(prof.team);
+const PREMIUM_BENEFITS = ['Moto e carro comum liberados', 'Caixa de som básica', 'Cartazes: uso ilimitado, até 20 salvos', 'Spray com recargas ilimitadas', 'Participar e criar mesas de debate', 'Crush liberado', 'Selo de verificado ♛'];
 const PASSES = [
-  {id:'premium', name:'Premium', price:10, desc:'Pagamento único. Moto, carro e carro de som; spray ilimitado; cartazes ilimitados (até 20 salvos); debates; Crush; selo ♛.'},
-  {id:'garagem', name:'Passe Garagem', price:15, desc:'Toda a garagem: Tesla Roadster, carreta, dirigível, chopper, caminhão de som, montarias do seu time (dinossauro, calango ou onça) e tudo do Premium em veículos.'},
-  {id:'pvp',     name:'Passe PvP', price:5, desc:'Equipamento (taco de espuma) e combate na avenida. P abre o PvP; Espaço ataca.'},
-  {id:'visual',  name:'Pacote Visual', price:8, desc:'Todas as camisas, bonés, bandeiras, objetos e personagens especiais.'},
+  {id:'premium', name:'Premium', price:PREMIUM_PRICE, tag:'Pagamento único', desc:'Para jogar sem limites básicos.', benefits:PREMIUM_BENEFITS},
+  {id:'personagens', name:'Passe Personagens', price:350, tag:'Seu elenco, sem limites', desc:'Todos os personagens. Inclusive os próximos.', benefits:['Todos os personagens atuais', 'Novos personagens incluídos', 'Premium incluído', 'Selo de verificado']},
+  {id:'garagem', name:'Passe Garagem & Objetos', price:300, tag:'A avenida é sua pista', desc:'Toda a garagem e cartazes ilimitados.', benefits:['Todos os veículos, montarias e sistemas de som', 'Todos os objetos de PvP', 'Cartazes: uso ilimitado, até 20 salvos', 'Premium incluído', 'Selo de verificado']},
+  {id:'total', name:'Passe Total', price:500, tag:'A experiência completa', desc:'Tudo para jogar. E tudo novo que chegar.', benefits:['Tudo dos passes Personagens e Garagem', 'Bandeiras e personalizações ilimitadas', 'Recursos e novidades do jogo incluídos', 'Premium incluído', 'Selo de verificado']},
 ];
 const STAMPS = [{id:'tag',name:'Seu nome'},{id:'coracao',name:'Coração'},{id:'estrela',name:'Estrela'},{id:'paz',name:'Paz'},{id:'time',name:'Time'},{id:'smile',name:'Sorriso'}];
 const SPRAYC = ['#ff3b6b','#ffd400','#1ec8ff','#39e06b','#ffffff','#ff7a1a','#b04bff','#111111'];
@@ -387,7 +473,7 @@ const TEAM = byId(TEAMS), CHAR = byId(CHARS), SHIRT = byId(SHIRTS), CAP = byId(C
 const filterBad = s => { let o = s; for (const w of BAD) o = o.replace(new RegExp(w, 'gi'), '*'.repeat(w.length)); return o; };
 
 /* ================= PERFIL ================= */
-const DEF = {nick:'', team:'va', look:{char:'homem', shirt:'brasil', skin:1, hairColor:0, beard:0, cap:'none'}, held:{type:'flag', id:'brasil'}, premium:false, passes:{}, owned:{}, cartazes:[], missions:{}, done:{}, spray:{stamp:'tag', color:'#ff3b6b'}, flagText:'MINHA BANDEIRA', settings:{quality:'media', names:true, vol:.7, sound:true, chatH:200}, best:null, map:'paulista', kos:0};
+const DEF = {sprayLeft:3, nick:'', team:'va', look:{char:'homem', shirt:'brasil', skin:1, hairColor:0, beard:0, cap:'none'}, held:{type:'flag', id:'brasil'}, premium:false, passes:{}, owned:{}, cartazes:[], missions:{}, done:{}, spray:{stamp:'tag', color:'#ff3b6b'}, flagText:'MINHA BANDEIRA', settings:{quality:'media', names:true, vol:.7, sound:true, chatH:200}, best:null, map:'paulista', kos:0};
 let prof;
 try { prof = Object.assign(structuredClone(DEF), JSON.parse(localStorage.getItem('avenida_livre') || '{}')); } catch(e) { prof = structuredClone(DEF); }
 prof.look = Object.assign({}, DEF.look, prof.look); prof.settings = Object.assign({}, DEF.settings, prof.settings);
@@ -405,17 +491,21 @@ fixLook();
 let saveT = 0;
 function save(now) { if (!now) { clearTimeout(saveT); saveT = setTimeout(() => save(true), 400); return; } try { localStorage.setItem('avenida_livre', JSON.stringify(prof)); } catch(e) {} }
 
+const hasPass = id => !!(prof.passes.total || prof.passes[id]);
 function owns(kind, it) {
   if (!it) return false;
   if (prof.owned[kind + ':' + it.id]) return true;
-  if (kind === 'veh') { if (!it.prem && !it.pass) return true; if (prof.passes.garagem) return true; if (it.prem && prof.premium) return true; return false; }
+  if (kind === 'veh') { if (!it.prem && !it.price) return true; if (hasPass('garagem')) return true; return !!(it.prem && prof.premium); }
+  if (kind === 'char' && it.price) return hasPass('personagens');
   if (!it.price) return true;
-  return !!prof.passes.visual;
+  return hasPass('total');
 }
+const hasPvp = () => !!(prof.owned['pvp'] || hasPass('garagem'));
 function requireItem(kind, it, cb) {
   if (owns(kind, it)) return cb();
-  if (kind === 'veh') return buyPass(it.prem ? 'premium' : 'garagem', cb, `${it.name} faz parte do ${it.prem ? 'Premium' : 'Passe Garagem'}.`);
-  buyModal({name: it.name, price: it.price, desc: 'Item cosmético. Também incluso no Pacote Visual.', apply: () => { prof.owned[kind + ':' + it.id] = 1; }}, cb);
+  const via = kind === 'veh' ? (it.prem ? 'Também liberado pelo Premium e pelos passes Garagem e Total.' : 'Também incluso nos passes Garagem & Objetos e Total.') : kind === 'char' ? 'Fica na sua conta para sempre, em qualquer time. Também incluso nos passes Personagens e Total.' : 'Também incluso no Passe Total.';
+  if (kind === 'veh' && it.prem && !it.price) return buyPass('premium', cb, `${it.name} faz parte do Premium.`);
+  buyModal({name:it.name, price:it.price, desc:via, apply:() => { prof.owned[kind + ':' + it.id] = 1; }, alt:kind === 'veh' && it.prem ? 'premium' : null}, cb);
 }
 
 /* ================= RENDER BASE ================= */
@@ -555,72 +645,170 @@ function shirtMats(type, team) {
 }
 
 /* ================= PERSONAGENS ================= */
+const LONG_SLEEVE = new Set(['suit', 'blazer', 'tux', 'longcoat', 'coat', 'jacket', 'vest', 'hoodie', 'sweater', 'uniform', 'armor', 'robe', 'gi', 'openshirt', 'skeleton']);
+const NO_SLEEVE = new Set(['bare', 'tank', 'croptop', 'dirndl']);
+const OPEN_FRONT = new Set(['suit', 'blazer', 'tux', 'longcoat', 'coat', 'jacket', 'vest', 'openshirt']);
+const specTex = new Map();
+// Frente do tronco dos personagens especiais (roupa, gravata, faixas, estampas), desenhada num canvas só.
+function specFront(sp) {
+  const key = JSON.stringify([sp.top, sp.tie, sp.x, sp.sk]); if (specTex.has(key)) return specTex.get(key);
+  const [t, c = '#333', c2 = '#fff', text] = sp.top, x_ = sp.x || [], has = k => x_.includes(k);
+  const tex = canvasTex(128, 128, (x, w, h) => {
+    const bg = t === 'bare' ? sp.sk : t === 'skeleton' ? '#1c1c1c' : c;
+    x.fillStyle = bg; x.fillRect(0, 0, w, h);
+    const txt = (s, y, f, col) => { x.fillStyle = col; x.textAlign = 'center'; x.textBaseline = 'middle'; let fs = f; x.font = `900 ${fs}px Inter,Arial`; while (x.measureText(s).width > 112 && fs > 7) { fs--; x.font = `900 ${fs}px Inter,Arial`; } x.fillText(s, 64, y); };
+    if (t === 'shirtBR') { x.fillStyle = '#f6d31c'; x.fillRect(0, 0, w, h); x.fillStyle = '#1e9b45'; x.fillRect(0, 0, w, 8); x.fillRect(0, h - 6, w, 6); drawBrasil(x, 74, 30, 30, 21); }
+    if (t === 'skeleton') { x.fillStyle = c; x.fillRect(60, 6, 8, 116); for (let i = 0; i < 6; i++) { x.fillRect(22, 18 + i*14, 84, 6); } x.fillStyle = '#1c1c1c'; x.fillRect(62, 18, 4, 84); }
+    if (OPEN_FRONT.has(t)) {
+      if (c2 === 'plaid') { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#8a2f2f' : '#3a5a3a'; x.fillRect(44 + i*5, 0, 5, h); } x.fillStyle = 'rgba(255,255,255,.25)'; for (let j = 0; j < h; j += 10) x.fillRect(44, j, 40, 3); }
+      else if (c2 === 'stripes') { for (let i = 0; i < 8; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#6b8ec8'; x.fillRect(44 + i*5, 0, 5, h); } }
+      else { x.fillStyle = c2; x.beginPath(); x.moveTo(42, 0); x.lineTo(86, 0); x.lineTo(70, 118); x.lineTo(58, 118); x.closePath(); x.fill(); }
+      x.fillStyle = t === 'tux' ? '#0d0d0d' : 'rgba(0,0,0,.28)'; x.beginPath(); x.moveTo(40, 0); x.lineTo(52, 0); x.lineTo(62, 70); x.closePath(); x.fill(); x.beginPath(); x.moveTo(88, 0); x.lineTo(76, 0); x.lineTo(66, 70); x.closePath(); x.fill();
+      if (sp.tie) { x.fillStyle = sp.tie; x.beginPath(); x.moveTo(59, 6); x.lineTo(69, 6); x.lineTo(67, 14); x.lineTo(72, 78); x.lineTo(64, 88); x.lineTo(56, 78); x.lineTo(61, 14); x.closePath(); x.fill(); }
+      else if (t === 'openshirt') { x.fillStyle = sp.sk; x.beginPath(); x.moveTo(54, 0); x.lineTo(74, 0); x.lineTo(64, 34); x.closePath(); x.fill(); }
+    }
+    if (t === 'polo') { x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(50, 0, 28, 10); x.fillStyle = 'rgba(0,0,0,.3)'; x.fillRect(62, 10, 4, 26); }
+    if (t === 'hoodie') { x.strokeStyle = 'rgba(255,255,255,.7)'; x.lineWidth = 3; x.beginPath(); x.moveTo(56, 6); x.lineTo(54, 40); x.moveTo(72, 6); x.lineTo(74, 40); x.stroke(); x.fillStyle = 'rgba(0,0,0,.2)'; x.fillRect(30, 80, 68, 30); }
+    if (t === 'sweater') { x.fillStyle = 'rgba(255,255,255,.18)'; for (let j = 8; j < h; j += 12) x.fillRect(0, j, w, 3); }
+    if (t === 'uniform') { x.fillStyle = c2 === '#ffffff' ? '#c9b04a' : c2; for (let j = 20; j < 110; j += 20) { x.beginPath(); x.arc(48, j, 3.5, 0, 7); x.arc(80, j, 3.5, 0, 7); x.fill(); } if (c2 !== '#ffffff') { x.fillRect(0, 0, w, 6); x.strokeStyle = c2; x.lineWidth = 3; x.strokeRect(36, 8, 56, 110); } }
+    if (t === 'armor') { x.fillStyle = c2; x.fillRect(0, 0, w, 10); x.fillRect(0, 56, w, 6); x.fillRect(58, 10, 12, 46); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 2; x.strokeRect(14, 14, 100, 96); }
+    if (t === 'gi') { x.fillStyle = c2; x.beginPath(); x.moveTo(40, 0); x.lineTo(64, 60); x.lineTo(88, 0); x.lineTo(78, 0); x.lineTo(64, 40); x.lineTo(50, 0); x.fill(); x.fillRect(0, 96, w, 12); }
+    if (t === 'robe') { x.fillStyle = '#2a2a2a'; x.fillRect(60, 0, 8, h); }
+    if (t === 'dress' || t === 'dirndl') { x.fillStyle = c2; x.fillRect(0, 0, w, 34); x.fillStyle = c; x.fillRect(30, 34, 68, 94); if (t === 'dirndl') { x.strokeStyle = '#ffffff'; x.lineWidth = 2; for (let j = 44; j < 110; j += 12) { x.beginPath(); x.moveTo(44, j); x.lineTo(84, j + 6); x.stroke(); } } }
+    if (t === 'hawaii') { for (let i = 0; i < 14; i++) { x.fillStyle = ['#ffd400', '#ff6b8b', '#ffffff'][i % 3]; x.beginPath(); x.arc((i*37) % 120 + 4, (i*53) % 120 + 4, 7, 0, 7); x.fill(); } }
+    if (t === 'jersey') { x.fillStyle = c2; x.fillRect(0, 0, w, 10); txt(text || '10', 70, 48, c2); }
+    if (t === 'croptop') { x.fillStyle = sp.sk; x.fillRect(0, 64, w, 64); x.fillStyle = '#2b6fd6'; for (let i = 0; i < 6; i++) { const px = 12 + i*20, py = 30 + (i % 2)*14; x.fillRect(px, py, 3, 18); x.beginPath(); x.ellipse(px + 1, py, 9, 4, .3, 0, 7); x.fill(); } }
+    if (c2 === 'flagBR') drawBrasil(x, 34, 40, 60, 42);
+    if (c2 === 'palms' && t !== 'croptop') { x.fillStyle = '#2b6fd6'; for (let i = 0; i < 5; i++) x.fillRect(16 + i*22, 40, 3, 30); }
+    if (text && t !== 'jersey') { const parts = text.length > 11 ? text.split(' ') : [text]; const mid = Math.ceil(parts.length/2); const lines = parts.length > 1 ? [parts.slice(0, mid).join(' '), parts.slice(mid).join(' ')] : parts; lines.forEach((l, i) => txt(l, 60 + (i - (lines.length - 1)/2)*22, 20, c === '#ffffff' || c === '#f2f2f2' ? '#151515' : '#ffffff')); }
+    if (has('muscle') && t === 'bare') { x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = 3; x.beginPath(); x.moveTo(64, 20); x.lineTo(64, 70); x.moveTo(30, 52); x.quadraticCurveTo(64, 64, 98, 52); x.stroke(); for (let j = 74; j < 120; j += 14) { x.beginPath(); x.moveTo(50, j); x.lineTo(78, j); x.stroke(); } }
+    if (has('tattooChest')) { x.strokeStyle = 'rgba(20,20,30,.6)'; x.lineWidth = 3; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(30 + (i % 3)*34, 30 + Math.floor(i/3)*26, 8, i, i + 3.5); x.stroke(); } }
+    const sash = cs => cs.forEach((col, i) => { x.strokeStyle = col; x.lineWidth = 14 - i*5; x.beginPath(); x.moveTo(14, 0); x.lineTo(118, 128); x.stroke(); });
+    if (has('sashBR')) sash(['#1e9b45', '#f6d31c']);
+    if (has('sashGreen')) sash(['#1e7a3a', '#d4af37']);
+    if (has('sashVE')) { [['#f6d31c', 18], ['#2253d6', 12], ['#c4161c', 6]].forEach(([col, lw]) => { x.strokeStyle = col; x.lineWidth = lw; x.beginPath(); x.moveTo(14, 0); x.lineTo(118, 128); x.stroke(); }); }
+    if (has('medals')) { for (let i = 0; i < 4; i++) { x.fillStyle = ['#d4af37', '#c4161c', '#2253d6', '#d4af37'][i]; x.fillRect(80 + (i % 2)*12, 40 + Math.floor(i/2)*16, 9, 12); } }
+    if (has('pin22')) { x.fillStyle = '#f6d31c'; x.fillRect(84, 22, 14, 10); x.fillStyle = '#1e9b45'; x.font = '900 9px Inter,Arial'; x.textAlign = 'center'; x.fillText('22', 91, 30); }
+    if (has('pinStar')) { x.fillStyle = '#d81f26'; star(x, 90, 28, 8); }
+    if (has('emblemX')) { x.fillStyle = '#f6d31c'; x.fillRect(40, 30, 48, 44); x.strokeStyle = '#121212'; x.lineWidth = 8; x.beginPath(); x.moveTo(48, 36); x.lineTo(80, 68); x.moveTo(80, 36); x.lineTo(48, 68); x.stroke(); }
+    if (has('chain') || has('goldNecklace')) { x.strokeStyle = '#e6b800'; x.lineWidth = 4; x.beginPath(); x.arc(64, 4, 30, .2, Math.PI - .2); x.stroke(); }
+    if (has('boneNecklace')) { x.strokeStyle = '#e8e3d3'; x.lineWidth = 3; x.beginPath(); x.arc(64, 4, 28, .3, Math.PI - .3); x.stroke(); x.fillStyle = '#e8e3d3'; x.fillRect(60, 30, 8, 14); }
+    if (has('scarf')) { x.fillStyle = '#efe6d0'; x.fillRect(0, 0, w, 18); x.fillRect(70, 18, 16, 50); }
+    if (has('apron')) { x.fillStyle = '#ffffff'; x.fillRect(40, 96, 48, 32); }
+    if (has('redGems')) { x.fillStyle = '#d4af37'; x.fillRect(0, 0, w, 6); x.fillStyle = '#d81f26'; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(40 + i*24, 24, 5, 0, 7); x.fill(); } }
+  });
+  const fm = new THREE.MeshLambertMaterial({map:tex});
+  const side = mat(t === 'bare' ? sp.sk : t === 'shirtBR' ? '#f6d31c' : t === 'skeleton' ? '#1c1c1c' : c);
+  const r = {mats:[side, side, side, side, fm, side], base:t === 'shirtBR' ? '#f6d31c' : t === 'bare' ? sp.sk : c};
+  specTex.set(key, r); return r;
+}
+let _tatMat = null;
+function tattooMat() { if (!_tatMat) _tatMat = new THREE.MeshLambertMaterial({map:canvasTex(32, 64, x => { x.fillStyle = '#c99a78'; x.fillRect(0, 0, 32, 64); x.strokeStyle = '#2a2a3a'; x.lineWidth = 2; for (let i = 0; i < 9; i++) { x.beginPath(); x.arc(rand(0, 32), rand(0, 64), rand(3, 7), 0, rand(2, 6)); x.stroke(); } })}); return _tatMat; }
+
 function buildCharacter(look) {
   const team = TEAM[look.team] || TEAMS[0], ch = CHAR[look.char] || CHARS[0], sp = ch.special, f = ch.g === 'f';
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
-  const SPSKIN = {flavio:'#e9c3a0', lula:'#e2b48e', bolso:'#efc9a8', renan:'#e9c3a0', ana:'#f3d3b8', xandao:'#e9c3a0', renato:'#e7b892', kim:'#ecc9a5'};
-  const skin = sp ? SPSKIN[sp] : (SKINS[look.skin ?? 1] || SKINS[1]).c;
-  const hairCol = sp ? ch.hairFix : (HAIRC[look.hairColor] && HAIRC[look.hairColor].c) || ch.hairFix || look.natHair || '#2a1b12';
-  let sh = shirtMats(look.shirt || 'brasil', team), shirtM = sh.mats, sleeveM = mat(sh.base), pants = look.pants || (f ? '#33415f' : team.pants), shoe = look.shoe || '#f2f2f2';
-  const SUIT = {flavio:'#1f2a44', lula:'#34343c', renato:'#3f4c63', kim:'#1c2440', ana:'#f0ede6'}, TIE = {flavio:'#1e9b45', lula:'#d81f26', renato:'#2c4a8a', kim:'#7a1f2a'};
-  if (SUIT[sp]) { shirtM = mat(SUIT[sp]); sleeveM = mat(SUIT[sp]); pants = sp === 'ana' ? '#1d1d22' : SUIT[sp]; shoe = '#111'; sh = {base:SUIT[sp]}; }
-  if (sp === 'xandao') { shirtM = mat('#121212'); sleeveM = mat('#121212'); pants = '#121212'; shoe = '#111'; sh = {base:'#121212'}; }
-  if (sp === 'bolso') { sh = shirtMats('brasil', TEAM.va); shirtM = sh.mats; sleeveM = mat(sh.base); pants = '#55585e'; shoe = '#222'; }
-  if (sp === 'renan') { sh = shirtMats('missaopr', TEAM.pa); shirtM = sh.mats; sleeveM = mat(sh.base); pants = '#2a2a2a'; shoe = '#f2f2f2'; }
+  const xs = (sp && sp.x) || [], has = k => xs.includes(k);
+  let skin, hairCol, hairStyle, beard, beardCol, glasses, topMats, topBase, sleeveCol, sleeveLen, legType, pants, shoe;
+  if (sp) {
+    skin = sp.sk; hairCol = sp.hc || '#2a1b12'; hairStyle = sp.h || 'short'; beard = sp.b || 0; beardCol = sp.bc || hairCol; glasses = sp.gl;
+    const tm = specFront(sp); topMats = tm.mats; topBase = tm.base;
+    const t = sp.top[0];
+    sleeveCol = t === 'vest' ? (sp.top[2] || '#fff') : t === 'shirtBR' ? '#f6d31c' : t === 'skeleton' ? sp.top[1] : topBase;
+    sleeveLen = NO_SLEEVE.has(t) ? 0 : LONG_SLEEVE.has(t) ? .5 : .27;
+    legType = (sp.leg || ['pants'])[0]; pants = (sp.leg || [])[1] || '#2a2a33'; shoe = sp.sh || '#111';
+  } else {
+    skin = (SKINS[look.skin ?? 1] || SKINS[1]).c;
+    hairCol = (HAIRC[look.hairColor] && HAIRC[look.hairColor].c) || ch.hairFix || look.natHair || '#2a1b12';
+    hairStyle = ch.id === 'mulher' && look.pony ? 'pony' : ch.hair; beard = f ? 0 : ((look.beard || 0) || (ch.must ? 1 : 0)); beardCol = hairCol; glasses = ch.glasses;
+    const sh = shirtMats(look.shirt || 'brasil', team); topMats = sh.mats; topBase = sh.base; sleeveCol = sh.base; sleeveLen = .27;
+    legType = 'pants'; pants = look.pants || (f ? '#33415f' : team.pants); shoe = look.shoe || '#f2f2f2';
+  }
+  const muscle = has('muscle') ? 1.25 : 1;
   const hipY = .9;
-  const leg = s => { const g = new THREE.Group(); g.position.set(s*.11, hipY, 0); body.add(g); box(.17, .8, .19, pants, 0, -.4, 0, g); box(.18, .11, .3, shoe, 0, -.84, .04, g); return g; };
+  const leg = s => {
+    const g = new THREE.Group(); g.position.set(s*.11, hipY, 0); body.add(g);
+    if (legType === 'shorts') { box(.18, .34, .2, pants, 0, -.17, 0, g); box(.15, .48, .17, skin, 0, -.58, 0, g); }
+    else if (legType === 'skirt' || legType === 'mini') box(.15, .8, .17, skin, 0, -.42, 0, g);
+    else box(.17, .8, .19, pants, 0, -.4, 0, g);
+    box(.18, .11, .3, shoe, 0, -.84, .04, g); return g;
+  };
   const legL = leg(1), legR = leg(-1);
   const torso = new THREE.Group(); torso.position.y = hipY; body.add(torso);
-  const tw = f ? .44 : .5;
-  box(tw, .62, .27, shirtM, 0, .31, 0, torso);
-  if (ch.belly) mk(SPH, sleeveM, .25, .22, .13, 0, .17, .1, torso);
-  if (SUIT[sp]) { box(.15, .42, .01, sp === 'ana' ? '#d9c3a0' : '#ffffff', 0, .4, .137, torso); if (TIE[sp]) box(.05, .34, .012, TIE[sp], 0, .37, .144, torso); if (sp === 'flavio') box(.06, .05, .01, '#f6d31c', -.15, .5, .14, torso); }
-  if (sp === 'lula') { const s = box(.06, .06, .012, '#d81f26', -.15, .5, .14, torso); s.rotation.z = .8; }
-  if (sp === 'xandao') { const cape = box(.56, 1.25, .03, '#0a0a0a', 0, -.12, -.16, torso); cape.rotation.x = .1; box(tw + .08, .55, .32, '#121212', 0, -.22, 0, torso); box(.2, .2, .012, '#f6d31c', 0, .4, .14, torso); const xx = box(.04, .18, .014, '#121212', 0, .4, .146, torso); xx.rotation.z = .7; const xy = box(.04, .18, .014, '#121212', 0, .4, .146, torso); xy.rotation.z = -.7; }
-  if (sp === 'bolso') { const a = box(.08, .78, .29, '#1e9b45', 0, .3, 0, torso); a.rotation.z = .62; const b = box(.04, .78, .295, '#f6d31c', 0, .3, 0, torso); b.rotation.z = .62; }
+  const tw = (f ? .44 : .5)*(muscle > 1 ? 1.12 : 1);
+  box(tw, .62, .27, topMats, 0, .31, 0, torso);
+  if (legType === 'skirt') box(tw + .08, .38, .34, pants, 0, -.14, 0, torso);
+  if (legType === 'mini') box(tw + .06, .2, .32, pants, 0, -.06, 0, torso);
+  if (sp && (sp.top[0] === 'longcoat' || sp.top[0] === 'coat' || sp.top[0] === 'robe')) box(tw + .04, .55, .3, sp.top[1], 0, -.25, 0, torso);
+  if (ch.belly) mk(SPH, mat(sleeveCol), .25, .22, .13, 0, .17, .1, torso);
+  if (has('capeBlack')) { const cape = box(.56, 1.25, .03, '#0a0a0a', 0, -.12, -.16, torso); cape.rotation.x = .1; }
+  if (has('towel')) box(.14, .1, .3, '#ffffff', -(tw/2 - .02), .62, 0, torso);
+  if (has('epaulettes')) for (const s of [-1, 1]) box(.14, .04, .2, '#d4af37', s*(tw/2), .63, 0, torso);
   if (ch.backpack) box(.36, .42, .15, '#3b4a5c', 0, .33, -.2, torso);
   const arm = s => {
     const g = new THREE.Group(); g.position.set(s*(tw/2 + .07), .58, 0); torso.add(g);
-    const sl = SUIT[sp] || sp === 'xandao' ? .5 : .27;
-    box(.13, sl, .14, sleeveM, 0, -sl/2 + .02, 0, g);
-    box(.11, .6 - sl, .12, skin, 0, -(sl + (.6 - sl)/2), 0, g);
+    const th = muscle;
+    if (sleeveLen > 0) box(.13*th, sleeveLen, .14*th, mat(sleeveCol), 0, -sleeveLen/2 + .02, 0, g);
+    const tat = has('tattooArms') || (has('tattooRight') && s < 0);
+    const low = .6 - sleeveLen;
+    if (low > .01) box(.11*th, low, .12*th, tat ? tattooMat() : skin, 0, -(sleeveLen + low/2), 0, g);
+    if (has('gloves')) box(.13, .1, .14, '#151515', 0, -.56, 0, g);
     const hand = new THREE.Object3D(); hand.position.y = -.6; g.add(hand); g.userData.hand = hand; return g;
   };
   const armL = arm(1), armR = arm(-1);
   const head = new THREE.Group(); head.position.y = .62; torso.add(head);
   box(.12, .08, .12, skin, 0, .03, 0, head);
-  {
-    box(.3, .32, .3, skin, 0, .22, 0, head);
-    box(.05, .05, .02, '#1a1a1a', .07, .24, .15, head); box(.05, .05, .02, '#1a1a1a', -.07, .24, .15, head);
-    box(.08, .02, .02, '#7a3b2e', 0, .13, .15, head);
-    const hs = ch.id === 'mulher' && look.pony ? 'pony' : ch.hair;
-    if (hs === 'short' || hs === 'spiky' || hs === 'long' || hs === 'pony' || hs === 'bun') { box(.32, .08, .32, hairCol, 0, .4, 0, head); box(.32, .2, .06, hairCol, 0, .3, -.14, head); box(.03, .12, .25, hairCol, .155, .31, -.02, head); box(.03, .12, .25, hairCol, -.155, .31, -.02, head); }
-    if (hs === 'spiky') for (let i = -1; i <= 1; i++) { const s = box(.08, .1, .08, hairCol, i*.09, .46, .03, head); s.rotation.z = i*.3; }
-    if (hs === 'long') { box(.33, .48, .07, hairCol, 0, .14, -.16, head); box(.035, .34, .24, hairCol, .16, .2, -.03, head); box(.035, .34, .24, hairCol, -.16, .2, -.03, head); }
-    if (hs === 'pony') { box(.09, .32, .09, hairCol, 0, .17, -.21, head); }
-    if (hs === 'bun') { mk(SPH, hairCol, .09, .09, .09, 0, .44, -.1, head); }
-    if (hs === 'bald') { box(.03, .1, .2, hairCol, .155, .28, -.03, head); box(.03, .1, .2, hairCol, -.155, .28, -.03, head); box(.3, .1, .03, hairCol, 0, .28, -.15, head); }
-    const SPBEARD = {lula:4, renan:3, renato:2, flavio:0, bolso:0, xandao:0, kim:0, ana:0};
-    const bd = sp ? SPBEARD[sp] : ((look.beard || 0) || (ch.must ? 1 : 0));
-    if (!f) {
-      if (bd === 1) box(.15, .035, .02, hairCol, 0, .16, .155, head);
-      if (bd === 2) { box(.08, .07, .03, hairCol, 0, .07, .145, head); box(.12, .03, .02, hairCol, 0, .16, .155, head); }
-      if (bd === 3) { box(.31, .08, .05, hairCol, 0, .09, .135, head); box(.03, .14, .2, hairCol, .155, .14, .05, head); box(.03, .14, .2, hairCol, -.155, .14, .05, head); }
-      if (bd === 4) { box(.32, .2, .09, hairCol, 0, .08, .12, head); box(.035, .2, .22, hairCol, .155, .15, .04, head); box(.035, .2, .22, hairCol, -.155, .15, .04, head); }
-    }
-    if (ch.glasses === 'sun') box(.27, .06, .02, '#0d0d0d', 0, .245, .16, head);
-    if (ch.glasses === 'clear') { box(.09, .06, .015, '#444', .07, .245, .158, head); box(.09, .06, .015, '#444', -.07, .245, .158, head); }
-    if (sp === 'xandao') { box(.31, .07, .02, '#111', 0, .245, .156, head); box(.08, .04, .02, '#555', .08, .3, .155, head).rotation.z = -.2; box(.08, .04, .02, '#555', -.08, .3, .155, head).rotation.z = .2; }
-    if (sp === 'bolso') box(.32, .05, .3, hairCol, .02, .43, .02, head);
-  }
+  box(.3, .32, .3, skin, 0, .22, 0, head);
+  const eye = has('redEyes') ? '#ff2a2a' : has('skull') ? '#0d0d0d' : '#1a1a1a', ew = has('skull') ? .08 : .05;
+  box(ew, ew, .02, eye, .07, .24, .15, head); box(ew, ew, .02, eye, -.07, .24, .15, head);
+  if (!has('skull')) box(.08, .02, .02, '#7a3b2e', 0, .13, .15, head); else { box(.04, .04, .02, '#0d0d0d', 0, .18, .152, head); box(.14, .02, .02, '#0d0d0d', 0, .1, .152, head); }
+  const H = hairCol, hs = hairStyle;
+  const top = () => { box(.32, .08, .32, H, 0, .4, 0, head); box(.32, .2, .06, H, 0, .3, -.14, head); box(.03, .12, .25, H, .155, .31, -.02, head); box(.03, .12, .25, H, -.155, .31, -.02, head); };
+  if (['short', 'spiky', 'long', 'pony', 'bun', 'slick', 'swoop', 'messy', 'big', 'fringe', 'braid', 'pigtails', 'quiff'].includes(hs)) top();
+  if (hs === 'buzz') box(.31, .03, .31, H, 0, .38, 0, head);
+  if (hs === 'spiky') for (let i = -1; i <= 1; i++) { const s = box(.08, .1, .08, H, i*.09, .46, .03, head); s.rotation.z = i*.3; }
+  if (hs === 'long') { box(.33, .48, .07, H, 0, .14, -.16, head); box(.035, .34, .24, H, .16, .2, -.03, head); box(.035, .34, .24, H, -.16, .2, -.03, head); }
+  if (hs === 'pony') box(.09, .32, .09, H, 0, .17, -.21, head);
+  if (hs === 'bun') mk(SPH, H, .09, .09, .09, 0, .44, -.1, head);
+  if (hs === 'bald') { box(.03, .1, .2, H, .155, .28, -.03, head); box(.03, .1, .2, H, -.155, .28, -.03, head); box(.3, .1, .03, H, 0, .28, -.15, head); }
+  if (hs === 'swoop') { box(.34, .1, .2, H, .02, .43, .08, head); box(.08, .08, .3, H, -.15, .4, 0, head); }
+  if (hs === 'slick') box(.32, .04, .34, H, 0, .44, -.01, head);
+  if (hs === 'quiff') box(.2, .12, .12, H, 0, .47, .1, head);
+  if (hs === 'messy') for (let i = 0; i < 5; i++) { const s = box(.1, .08, .1, H, rand(-.12, .12), .45, rand(-.12, .12), head); s.rotation.set(rand(-.5, .5), rand(0, 3), rand(-.5, .5)); }
+  if (hs === 'big') { box(.4, .2, .38, H, 0, .44, -.02, head); box(.06, .3, .32, H, .19, .26, -.02, head); box(.06, .3, .32, H, -.19, .26, -.02, head); box(.38, .3, .08, H, 0, .26, -.18, head); }
+  if (hs === 'curly') for (let i = 0; i < 9; i++) mk(SPH, H, .085, .085, .085, Math.cos(i*.7)*.13, .4 + (i % 2)*.04, Math.sin(i*.7)*.13 - .02, head);
+  if (hs === 'dreads') { box(.32, .08, .32, H, 0, .4, 0, head); for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*1.4 - Math.PI*.2 + Math.PI/2; box(.04, .55, .04, H, Math.cos(a)*.16, .12, -Math.abs(Math.sin(a))*.16, head); } }
+  if (hs === 'fringe') { box(.18, .14, .04, H, .05, .32, .155, head); box(.33, .3, .07, H, 0, .2, -.16, head); }
+  if (hs === 'braid') { box(.33, .2, .07, H, 0, .28, -.16, head); box(.08, .55, .08, H, 0, .02, -.22, head); }
+  if (hs === 'pigtails') for (const s of [-1, 1]) { box(.09, .4, .09, H, s*.2, .2, -.05, head); if (has('bows')) box(.1, .06, .06, '#ffffff', s*.2, .4, -.05, head); }
+  const B = beardCol;
+  if (beard === 1) box(.15, .035, .02, B, 0, .16, .155, head);
+  if (beard === 2) { box(.08, .07, .03, B, 0, .07, .145, head); box(.12, .03, .02, B, 0, .16, .155, head); }
+  if (beard === 3) { box(.31, .08, .05, B, 0, .09, .135, head); box(.03, .14, .2, B, .155, .14, .05, head); box(.03, .14, .2, B, -.155, .14, .05, head); }
+  if (beard >= 4) { box(.32, .2, .09, B, 0, .08, .12, head); box(.035, .2, .22, B, .155, .15, .04, head); box(.035, .2, .22, B, -.155, .15, .04, head); }
+  if (beard === 5) box(.24, .3, .08, B, 0, -.12, .13, head);
+  if (glasses === 'sun') box(.27, .06, .02, '#0d0d0d', 0, .245, .16, head);
+  if (glasses === 'clear' || glasses === 'tortoise') { const gc = glasses === 'tortoise' ? '#6b4428' : '#444'; box(.09, .06, .015, gc, .07, .245, .158, head); box(.09, .06, .015, gc, -.07, .245, .158, head); }
+  if (glasses === 'thick') { box(.1, .07, .02, '#0d0d0d', .07, .245, .158, head); box(.1, .07, .02, '#0d0d0d', -.07, .245, .158, head); box(.04, .02, .02, '#0d0d0d', 0, .26, .158, head); }
+  if (glasses === 'aviator' || glasses === 'yellow') { const lc = glasses === 'aviator' ? '#c8862a' : '#f2d21a'; box(.1, .07, .015, lc, .07, .24, .158, head); box(.1, .07, .015, lc, -.07, .24, .158, head); box(.26, .015, .016, '#d4af37', 0, .275, .16, head); }
+  if (has('mask')) box(.31, .07, .02, '#111', 0, .245, .156, head);
+  if (has('clown')) { box(.3, .1, .01, '#f6f6f6', 0, .24, .151, head); mk(SPH, '#e8204f', .03, .03, .03, 0, .19, .16, head); }
+  if (has('theater')) { box(.15, .32, .01, '#c4161c', .075, .22, .151, head); box(.15, .32, .01, '#2253d6', -.075, .22, .151, head); }
+  if (has('warpaint')) box(.12, .025, .01, '#c4161c', .08, .2, .152, head);
+  if (has('elfEars')) for (const s of [-1, 1]) { const e = box(.04, .12, .06, skin, s*.17, .26, 0, head); e.rotation.z = -s*.5; }
+  if (has('earrings') || has('hoops')) for (const s of [-1, 1]) mk(TOR, '#e6b800', .03, .03, .03, s*.16, .14, .02, head);
+  if (has('headphones')) { box(.34, .04, .06, '#222', 0, .44, 0, head); for (const s of [-1, 1]) box(.05, .1, .1, '#222', s*.165, .26, 0, head); }
+  if (has('flowerCrown')) for (let i = 0; i < 10; i++) { const a = i/10*Math.PI*2; mk(SPH, ['#ff6b8b', '#ffd400', '#ffffff'][i % 3], .03, .03, .03, Math.sin(a)*.16, .42, Math.cos(a)*.16, head); }
+  const hat = sp && sp.hat;
+  if (hat && hat[0] === 'fedora') { mk(CYL, hat[1], .26, .02, .26, 0, .4, 0, head); mk(CYL, hat[1], .16, .14, .16, 0, .47, 0, head); mk(CYL, '#2a1a10', .165, .03, .165, 0, .43, 0, head); }
+  if (hat && hat[0] === 'beret') { const b = mk(CYL, hat[1], .19, .06, .19, .02, .43, 0, head); b.rotation.z = -.2; const st = box(.04, .04, .01, '#c4161c', 0, .43, .17, head); st.rotation.z = .8; }
+  if (hat && hat[0] === 'beanie') { box(.33, .14, .33, hat[1], 0, .42, 0, head); box(.34, .04, .34, hat[1], 0, .36, 0, head); }
   if (!sp && look.cap === 'mst') { box(.33, .09, .33, '#d81f26', 0, .42, 0, head); box(.3, .025, .17, '#d81f26', 0, .385, .21, head); box(.12, .06, .01, '#ffffff', 0, .42, .166, head); }
-  if (sp === 'bolso') { // peixe na mão esquerda
-    const fish = new THREE.Group(); armL.userData.hand.add(fish); fish.position.set(0, -.05, .12);
-    mk(SPH, '#9fb4c0', .07, .13, .32, 0, 0, 0, fish); const tl = mk(CONE, '#7f97a4', .1, .14, .03, 0, 0, -.38, fish); tl.rotation.x = -Math.PI/2; box(.02, .02, .01, '#111', .05, .04, .22, fish);
-  }
+  if (sp && sp.hold === 'fish') { const fish = new THREE.Group(); armL.userData.hand.add(fish); fish.position.set(0, -.05, .12); mk(SPH, '#9fb4c0', .07, .13, .32, 0, 0, 0, fish); const tl = mk(CONE, '#7f97a4', .1, .14, .03, 0, 0, -.38, fish); tl.rotation.x = -Math.PI/2; box(.02, .02, .01, '#111', .05, .04, .22, fish); }
+  if (sp && sp.hold === 'swords') for (const a of [armL, armR]) { const s = new THREE.Group(); a.userData.hand.add(s); s.position.set(0, -.04, .05); s.rotation.x = Math.PI/2.3; box(.03, .75, .015, '#d8dde3', 0, -.42, 0, s); box(.16, .03, .04, '#c08a3e', 0, -.05, 0, s); }
   if (ch.old) torso.rotation.x = .08;
-  if (f) root.scale.setScalar(.95);
-  const lod = mk(BOX, mat(sh.base), .5, 1.75, .32, 0, .88, 0, root, false); lod.visible = false;
+  root.scale.setScalar((f ? .95 : 1)*((sp && sp.sc) || 1));
+  const lod = mk(BOX, mat(topBase), .5, 1.75, .32, 0, .88, 0, root, false); lod.visible = false;
   const lodHead = mk(BOX, mat(skin), .3, .3, .3, 0, 1.9, 0, lod, false); lodHead.scale.set(.6, .17, .94);
   return {root, body, torso, legL, legR, armL, armR, head, hand:armR.userData.hand, lod, f, old:!!ch.old, look, ph:Math.random()*10, held:null, heldObj:null, cloth:null, raise:false, extra:null};
 }
@@ -742,6 +930,10 @@ function buildVehicle(id, color) {
       box(1.8, 1.1, .5, '#151515', 0, 1.45, -1.75, g); for (const sx of [-.5, .5]) for (const sy of [1.2, 1.7]) { const c = cyl(.2, .05, '#3a3a3a', sx, sy, -2.02, g); c.rotation.x = Math.PI/2; }
       const lid = box(1.8, .06, 1.1, color, 0, 2.15, -1.6, g); lid.rotation.x = -.5;
       [[.95,1.35],[-.95,1.35],[.95,-1.35],[-.95,-1.35]].forEach(([x,z]) => wheel(x, .36, z)); seat.set(.4, .5, .3); break;
+    case 'caixa': { box(.55, .8, .45, '#151515', 0, .55, .75, g); for (const y of [.42, .78]) { const c = cyl(.15, .04, '#3a3a3a', 0, y, .98, g); c.rotation.x = Math.PI/2; }
+      box(.6, .05, .05, '#999', 0, 1.0, .5, g); box(.05, .5, .05, '#999', .27, .75, .5, g); box(.05, .5, .05, '#999', -.27, .75, .5, g); wheel(.26, .12, .75, .12, .06); wheel(-.26, .12, .75, .12, .06);
+      for (let i = 0; i < 3; i++) box(.08, .08, .02, pick(['#ff3b6b', '#1ec8ff', '#39e06b']), -.15 + i*.15, .98, .98, g, false);
+      seat.set(0, 0, 0); pose = 'push'; break; }
     case 'calango': case 'onca': {
       const on = id === 'onca', skinM = on ? oncaMat() : mat('#7d8c3a'), dark = on ? '#3a2410' : '#5b6a26';
       const L = on ? 2.4 : 3.2, Hh = on ? 1.25 : 1.0;
@@ -797,13 +989,14 @@ function building(x, z, w, d, h, v, parent, solid=true) {
   if (solid) world.colliders.push({x0:x - w/2, x1:x + w/2, z0:z - d/2, z1:z + d/2, h});
   return m;
 }
-function addTelao(x, y, z, w, h, rotY, parent, pole) {
-  const t = canvasTex(512, 288, () => {}); t.anisotropy = MAXANISO;
+function addTelao(x, y, z, w, h, rotY, parent, pole, id, name) {
+  const vert = h > w, t = canvasTex(vert ? 288 : 512, vert ? 512 : 288, () => {}); t.anisotropy = MAXANISO;
   const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = rotY; parent.add(g);
   box(w + .6, h + .6, .5, '#1a1a1a', 0, 0, -.3, g);
   const scr = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({map:t})); scr.scale.set(w, h, 1); g.add(scr);
   if (pole) { box(.6, y, .6, '#555', 0, -y/2, -.4, g); }
-  world.teloes.push({t, ctx:t.userData.ctx, off:world.teloes.length});
+  const n = world.teloes.length;
+  world.teloes.push({t, ctx:t.userData.ctx, off:n, vert, id:id || `${prof.map}-telao-${n + 1}`, name:name || `Telão ${n + 1}`, pos:new V3(x, y, z), rotY});
 }
 function trees(list, parent, palm) {
   const n = list.length; if (!n) return;
@@ -878,8 +1071,18 @@ function buildPaulista(G) {
   for (let x = -W/2 + 6; x < W/2; x += 13) { if (CROSS.some(cx => Math.abs(x - cx) < 9)) continue; if (!(x > -6 && x < 66)) tl.push([x, 21.5, rand(.8, 1.1)]); tl.push([x + 6, -21.5, rand(.8, 1.1)]); }
   trees(tl, G);
   const lp = []; for (let x = -W/2 + 10; x < W/2; x += 30) { lp.push([x, 15.6, -1]); lp.push([x + 15, -15.6, 1]); } lamps(lp, G);
-  addTelao(10, 9, 30, 12, 6.75, Math.PI, G, true); addTelao(48, 9, 30, 12, 6.75, Math.PI, G, true);
-  addTelao(-150, 22, 24.6, 16, 9, Math.PI, G); addTelao(170, 22, -24.6, 16, 9, 0, G); addTelao(-260, 26, -24.6, 16, 9, 0, G); addTelao(290, 20, 24.6, 16, 9, Math.PI, G);
+  addTelao(30, 12.5, -29.65, 24, 7.6, 0, G, false, 'masp-principal', 'Telão principal · MASP');
+  addTelao(8, 9, 30, 12, 6.75, Math.PI, G, true, 'trianon-outdoor-1', 'Parque Trianon · Outdoor 1');
+  addTelao(30, 9, 30, 12, 6.75, Math.PI, G, true, 'trianon-outdoor-2', 'Parque Trianon · Outdoor 2');
+  addTelao(52, 9, 30, 12, 6.75, Math.PI, G, true, 'trianon-outdoor-3', 'Parque Trianon · Outdoor 3');
+  addTelao(-300, 24, 24.6, 16, 9, Math.PI, G, false, 'consolacao-torre', 'Torre do Metrô Consolação');
+  addTelao(-150, 22, 24.6, 16, 9, Math.PI, G, false, 'torre-matarazzo', 'Torre Matarazzo');
+  addTelao(-260, 26, -24.6, 9, 16, 0, G, false, 'augusta-empena', 'Empena da Rua Augusta');
+  addTelao(170, 22, -24.6, 9, 16, 0, G, false, 'fiesp-galeria', 'Fachada de LED do lado da FIESP');
+  addTelao(290, 20, 24.6, 16, 9, Math.PI, G, false, 'pamplona-jardins', 'Rua Pamplona, lado Jardins');
+  addTelao(390, 22, -24.6, 16, 9, 0, G, false, 'brigadeiro-torre', 'Torre do lado Brigadeiro');
+  addTelao(-200, 6.5, 23, 10, 5.6, Math.PI, G, true, 'bela-cintra', 'Esquina da Rua Bela Cintra');
+  addTelao(-120, 6.5, -23, 10, 5.6, 0, G, true, 'haddock-lobo', 'Esquina da Rua Haddock Lobo');
   world.zones = [{x0:-40, x1:110, z0:-13, z1:13, w:10}, {x0:-90, x1:150, z0:-13, z1:13, w:5}, {x0:-320, x1:330, z0:-13, z1:13, w:3}, {x0:-150, x1:200, z0:15.5, z1:22, w:1.6}, {x0:-150, x1:200, z0:-22, z1:-15.5, w:1.6}, {x0:-2, x1:62, z0:-76, z1:-30, w:1.8}, {x0:2, x1:58, z0:28, z1:88, w:.8}];
   world.spawn.set(30, 0, -18);
   world.race = [[-300, 8], [-180, 8], [-60, 8], [60, 8], [180, 8], [300, 8], [362, 0], [300, -8], [180, -8], [60, -8], [-60, -8], [-180, -8], [-300, -8], [-362, 0]];
@@ -1019,7 +1222,7 @@ function burst(x, y, z, color, n=26) {
 
 /* ================= ESTADO / JOGADOR ================= */
 const G = {mode:'lobby', aerial:false, pop:null, sprayMode:false, ad:{title:'ANUNCIE AQUI', sub:'Seu anúncio nos telões da avenida', bg:'#ecd27e', fg:'#14201a'}, supers:[], onScreen:0, telIdx:0};
-const P = {pos:new V3(), h:0, vy:0, onGround:true, c:null, veh:null, vehId:'pe', vs:0, alt:14, anim:'idle', emote:null, hp:100, pvp:false, ko:0, lastHit:-99, moveTarget:null, atk:0, seat:null, nick:'', team:'va', tag:null, bubble:null, super:null, sprayCharges:10, sprayT:0};
+const P = {pos:new V3(), h:0, vy:0, onGround:true, c:null, veh:null, vehId:'pe', vs:0, alt:14, anim:'idle', emote:null, hp:100, pvp:false, ko:0, lastHit:-99, moveTarget:null, atk:0, seat:null, nick:'', team:'va', tag:null, bubble:null, super:null, sprayT:0};
 const K = {};
 const cam = {yaw:Math.PI, pitch:.42, dist:9, aH:85, aTarget:new V3(), dragT:-9};
 let T = 0;
@@ -1107,7 +1310,7 @@ function updateBots(dt) {
   _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); _frustum.setFromProjectionMatrix(_pm);
   const camPos = camera.position; let onScreen = 0;
   const pAlive = G.mode === 'play' && P.c && P.ko <= 0;
-  const soms = trios.map(t => t.g.position); if (P.veh && (P.vehId === 'som' || P.vehId === 'somcar')) soms.push(P.pos);
+  const soms = trios.map(t => t.g.position); if (P.veh && (VEHD[P.vehId] && VEHD[P.vehId].music)) soms.push(P.pos);
   for (const b of bots) {
     const c = b.c;
     if (b.ko > 0) {
@@ -1354,7 +1557,7 @@ function sendChat(text) {
 function togglePvp(force) {
   if (G.mode !== 'play') return;
   const on = typeof force === 'boolean' ? force : !P.pvp;
-  if (on && !prof.passes.pvp && !prof.owned['pass:pvp']) return buyPass('pvp', () => togglePvp(true));
+  if (on && !hasPvp()) return buyModal({name:'PvP', price:PVP_PRICE, desc:'Equipamentos e combate em um só lugar: taco de espuma e o anel vermelho do PvP. P abre o PvP; Espaço ataca. Também incluso nos passes Garagem & Objetos e Total.', apply:() => { prof.owned.pvp = 1; }}, () => togglePvp(true));
   if (on && P.veh) dismount(true);
   P.pvp = on; rebuildPlayer();
   $('#hp').classList.toggle('hidden', !on); updateHP();
@@ -1402,7 +1605,6 @@ function updatePlayer(dt) {
   }
   if (P.pvp && T - P.lastHit > 5 && P.hp < 100) { P.hp = Math.min(100, P.hp + 6*dt); updateHP(); }
   if (P.atk > 0) P.atk -= dt*3;
-  if (!prof.premium && P.sprayCharges < 10) { P.sprayT += dt; if (P.sprayT > 20) { P.sprayT = 0; P.sprayCharges++; if (G.pop === 'spray') refreshPop(); } }
   const typing = isTyping();
   let f = 0, s = 0;
   if (!typing) { f = (K.w || K.arrowup ? 1 : 0) - (K.s || K.arrowdown ? 1 : 0); s = (K.d || K.arrowright ? 1 : 0) - (K.a || K.arrowleft ? 1 : 0); }
@@ -1571,8 +1773,8 @@ if (isTouch) {
 function sprayFront() { if (P.veh) return toast('Desça do veículo (ou saia do modo aéreo) para pegar o spray.'); doSpray(P.pos.x + Math.sin(P.h)*1.8, P.pos.z + Math.cos(P.h)*1.8); }
 function doSpray(x, z) {
   if (G.mode !== 'play' || P.veh) return;
-  if (!prof.premium && P.sprayCharges <= 0) return toast('Sem cargas de spray. Recarrega 1 a cada 20 s · Premium é ilimitado.');
-  if (!prof.premium) P.sprayCharges--;
+  if (!prof.premium && prof.sprayLeft <= 0) return buyModal({name:'Recarga de spray', price:SPRAY_REFILL.price, desc:`+${SPRAY_REFILL.charges} cargas. Com o Premium as recargas são ilimitadas.`, apply:() => { prof.sprayLeft += SPRAY_REFILL.charges; }, alt:'premium'}, () => refreshPop());
+  if (!prof.premium) { prof.sprayLeft--; save(); }
   P.h = Math.atan2(x - P.pos.x, z - P.pos.z);
   addSpray(x, z, prof.spray.stamp, prof.spray.color, P.nick, TEAM[prof.team]); sfx('spray'); prog('spray', 1);
   netSend({t:'spray', x:+x.toFixed(2), z:+z.toFixed(2), stamp:prof.spray.stamp, color:prof.spray.color});
@@ -1581,9 +1783,29 @@ function doSpray(x, z) {
 
 /* ================= TELÕES ================= */
 function teamOnline() { if (NET.counts) return TEAMS.map(t => NET.counts[t.id] || 0); return TEAMS.map((t, i) => Math.round(t.base*(1 + .03*Math.sin(T*.05 + i*2) + .01*Math.sin(T*.37 + i)))); }
+/* ---- anúncios dos telões (leilão: 5 vagas por telão, ordenadas pelo valor) ---- */
+const AD_RULES = {floors:{'masp-principal':1000, 'haddock-lobo':250, 'bela-cintra':250}, floor:500, linkMin:250, max:10000, slots:5, protectH:2, days:20};
+const ADS = {list:[], imgs:new Map()};
+const adFloor = id => AD_RULES.floors[id] || AD_RULES.floor;
+const adsFor = id => ADS.list.filter(a => a.screen === id).sort((a, b) => b.amount - a.amount).slice(0, AD_RULES.slots);
+function adImg(src) { let im = ADS.imgs.get(src); if (!im) { im = new Image(); im.onload = () => drawTeloes(); im.src = src; ADS.imgs.set(src, im); } return im.complete && im.naturalWidth ? im : null; }
+function drawAd(x, W, H, a) {
+  if (a.kind === 'image') {
+    x.fillStyle = '#000'; x.fillRect(0, 0, W, H); const im = adImg(a.img);
+    if (im) { const s = Math.max(W/im.naturalWidth, H/im.naturalHeight), w = im.naturalWidth*s, h = im.naturalHeight*s; x.drawImage(im, (W - w)/2, (H - h)/2, w, h); }
+  } else {
+    x.fillStyle = a.bg; x.fillRect(0, 0, W, H); x.fillStyle = a.fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+    let fs = W > H ? 46 : 40; x.font = `400 ${fs}px Anton,Impact,Arial`; const lines = wrapText(x, (a.title || '').toUpperCase(), W*.88).slice(0, 3);
+    lines.forEach((l, i) => x.fillText(l, W/2, H*.42 + (i - (lines.length - 1)/2)*fs*1.1)); x.font = '600 18px Inter,Arial'; wrapText(x, a.sub || '', W*.88).slice(0, 2).forEach((l, i) => x.fillText(l, W/2, H*.78 + i*22));
+  }
+  x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0, H - 22, W, 22); x.fillStyle = '#fff'; x.font = '600 12px Inter,Arial'; x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText(`ANÚNCIO · ${a.nick}${a.link ? ' · ' + a.link.replace(/^https?:\/\//, '').slice(0, 36) : ''}`, 8, H - 11);
+}
 function drawTeloes() {
   const counts = teamOnline(), tot = counts.reduce((a, b) => a + b, 0);
   for (const tl of world.teloes) {
+    const al = adsFor(tl.id);
+    if (al.length) { const k = (G.telIdx + tl.off) % (al.length*2 + 1); if (k < al.length*2) { drawAd(tl.ctx, tl.ctx.canvas.width, tl.ctx.canvas.height, al[k >> 1]); tl.t.needsUpdate = true; continue; } }
+    if (tl.vert) { const x = tl.ctx, W = 288, H = 512; x.fillStyle = '#0b1410'; x.fillRect(0, 0, W, H); x.textAlign = 'center'; x.fillStyle = '#ecd27e'; x.font = '400 54px Anton,Impact,Arial'; x.fillText('ANUNCIE', W/2, 200); x.fillText('AQUI', W/2, 262); x.fillStyle = '#fff'; x.font = '600 18px Inter,Arial'; x.fillText(tl.name, W/2, 330); x.fillText(`a partir de ${money(adFloor(tl.id))}`, W/2, 360); x.fillStyle = '#9fb2a6'; x.font = '600 15px Inter,Arial'; x.fillText('Botão "Anunciar no jogo"', W/2, 420); tl.t.needsUpdate = true; continue; }
     const x = tl.ctx, W = 512, H = 288, mode = (G.telIdx + tl.off) % 4;
     x.fillStyle = '#0b1410'; x.fillRect(0, 0, W, H); x.textAlign = 'left'; x.textBaseline = 'alphabetic';
     if (mode === 0) {
@@ -1660,7 +1882,7 @@ function updateAudio() {
   if (!AU.ctx) return; const a = AU.ctx;
   AU.master.gain.value = prof.settings.sound ? prof.settings.vol : 0;
   let md = 999; const ref = G.mode === 'play' && !G.aerial ? P.pos : cam.focus;
-  for (const t of trios) md = Math.min(md, t.g.position.distanceTo(ref)); if (P.veh && (P.vehId === 'som' || P.vehId === 'somcar')) md = 0;
+  for (const t of trios) md = Math.min(md, t.g.position.distanceTo(ref)); if (P.veh && (VEHD[P.vehId] && VEHD[P.vehId].music)) md = 0;
   const mv = clamp(1 - md/60, 0, 1)*.35; AU.musicGain.gain.setTargetAtTime(G.mode === 'lobby' ? 0 : mv, a.currentTime, .3);
   AU.crowd.gain.setTargetAtTime(G.mode === 'lobby' ? .015 : clamp(G.onScreen/180, .02, .09), a.currentTime, .5);
   if (mv < .01) { AU.nextT = a.currentTime + .05; return; }
@@ -1683,11 +1905,14 @@ function closeModal() { $('#modalWrap').classList.add('hidden'); $('#modal').inn
 $('#modalWrap').addEventListener('click', e => { if (e.target.id === 'modalWrap' || e.target.closest('[data-close]')) closeModal(); });
 function buyModal(prod, cb) {
   openModal(`<div class="kicker">Loja</div><h3>${esc(prod.name)}</h3><p class="mut">${esc(prod.desc || '')}</p><div class="price">${money(prod.price)}</div><div class="demo">Modo demonstração: nenhum pagamento real é feito ao confirmar. Para cobrar de verdade, conecte um provedor (Pix, Mercado Pago, Stripe) no ponto marcado no código.</div><div style="display:flex;gap:8px"><button class="btn gold" id="buyOk" style="flex:1">Confirmar compra (demo)</button><button class="btn" data-close>Cancelar</button></div>`);
+  if (prod.benefits) $('#modal .price').insertAdjacentHTML('afterend', `<div class="list">${prod.benefits.map(b => `<div class="li" style="padding:9px 12px"><span>✓ ${esc(b)}</span></div>`).join('')}</div>`);
+  if (prod.alt === 'premium' && !prof.premium) $('#buyOk').insertAdjacentHTML('afterend', `<button class="btn" id="buyAlt" style="flex:1">Ou Premium · ${money(PREMIUM_PRICE)}</button>`);
+  const alt = $('#buyAlt'); if (alt) alt.onclick = () => buyPass('premium', cb);
   $('#buyOk').onclick = () => { /* >>> integre o pagamento real aqui <<< */ prod.apply(); save(true); closeModal(); toast('Compra liberada ✓'); sfx('coin'); if (P.c) rebuildPlayer(); refreshAllUI(); cb && cb(); };
 }
 function buyPass(id, cb, why) {
   const p = PASS[id]; if ((id === 'premium' && prof.premium) || prof.passes[id]) { cb && cb(); return; }
-  buyModal({name:p.name, price:p.price, desc:(why ? why + ' ' : '') + p.desc, apply:() => { if (id === 'premium') prof.premium = true; prof.passes[id] = 1; }}, cb);
+  buyModal({name:p.name, price:p.price, desc:(why ? why + ' ' : '') + p.desc, benefits:p.benefits, apply:() => { prof.premium = true; prof.passes[id] = 1; }}, cb);
 }
 function refreshAllUI() { renderTeams(); renderChars(); renderCustom($('#lobbyCustom')); if (G.pop) refreshPop(); }
 
@@ -1699,9 +1924,12 @@ function renderTeams() {
 $('#teamCards').addEventListener('click', e => { const b = e.target.closest('[data-team]'); if (!b) return; prof.team = b.dataset.team; fixLook(); save(); renderChars(); renderTeams(); renderCustom($('#lobbyCustom')); refreshPreview(); sfx('click'); });
 let thumbs = {};
 function renderChars() {
-  $('#charGrid').innerHTML = CHARS.filter(forTeam).map(c => `<button class="char ${prof.look.char === c.id ? 'on' : ''}" data-char="${c.id}">${c.price && !owns('char', c) ? `<span class="tag">${money(c.price)}</span>` : c.special ? '<span class="tag">Especial</span>' : ''}<span class="ck">✓</span><img src="${thumbs[c.id] || ''}" alt="">${c.name}</button>`).join('');
+  const cur = CHAR[prof.look.char];
+  const list = CHARS.filter(c => !c.special && forTeam(c)).concat(CHARS.filter(c => c.special && (c.pop || owns('char', c) || c === cur)).slice(0, 14));
+  $('#charGrid').innerHTML = list.map(charCard).join('') + `<button class="char" data-shop="1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px"><span style="font-size:28px">＋</span>Ver mais personagens<small class="mut">${CHARS.filter(c => c.special).length} na loja ↗</small></button>`;
+  fillThumbs($('#charGrid'));
 }
-$('#charGrid').addEventListener('click', e => { const b = e.target.closest('[data-char]'); if (!b) return; const c = CHAR[b.dataset.char]; requireItem('char', c, () => { prof.look.char = c.id; save(); renderChars(); refreshPreview(); if (P.c) rebuildPlayer(); }); });
+$('#charGrid').addEventListener('click', e => { if (e.target.closest('[data-shop]')) return openCharShop(); const b = e.target.closest('[data-char]'); if (!b) return; const c = CHAR[b.dataset.char]; requireItem('char', c, () => { prof.look.char = c.id; save(); renderChars(); refreshPreview(); if (P.c) rebuildPlayer(); }); });
 function renderCustom(el, inGame) {
   if (!el) return; const L = prof.look, team = TEAM[prof.team], f = CHAR[L.char].g === 'f';
   const chip = (kind, it, on, label) => `<button class="chip ${on ? 'on' : ''} ${it.price && !owns(kind, it) ? 'locked' : ''}" data-k="${kind}" data-id="${it.id}">${label || it.name}${it.price && !owns(kind, it) ? ` <span class="price">${money(it.price)}</span>` : ''}</button>`;
@@ -1783,10 +2011,32 @@ pvCanvas.addEventListener('pointermove', e => { if (!pvDrag) return; pvYaw += (e
 pvCanvas.addEventListener('pointerup', () => pvDrag = false);
 $('#rotL').onclick = () => pvYaw -= .6; $('#rotR').onclick = () => pvYaw += .6;
 $$('[data-pose]').forEach(b => b.onclick = () => { pvPose = b.dataset.pose; $$('[data-pose]').forEach(x => x.classList.toggle('on', x === b)); });
-function makeThumbs() {
-  pvR.setSize(160, 200, false); pvCam.aspect = .8; pvCam.position.set(0, 1.55, 3.6); pvCam.lookAt(0, 1.45, 0); pvCam.updateProjectionMatrix(); ped.visible = false;
-  for (const ch of CHARS) { const c = buildCharacter(Object.assign({}, prof.look, {char:ch.id, team:prof.team, cap:'none'})); c.root.rotation.y = .35; pvScene.add(c.root); animChar(c, 'idle', 0); pvR.render(pvScene, pvCam); thumbs[ch.id] = pvCanvas.toDataURL('image/png'); pvScene.remove(c.root); }
-  ped.visible = true;
+// Miniaturas dos personagens: renderizadas sob demanda num renderer pequeno e guardadas como imagem.
+const thumbR = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true}); thumbR.setSize(160, 200, false); thumbR.outputColorSpace = THREE.SRGBColorSpace;
+const thumbScene = new THREE.Scene(); thumbScene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 2.2)); { const l = new THREE.DirectionalLight(0xfff0dd, 2.4); l.position.set(3, 5, 4); thumbScene.add(l); }
+const thumbCam = new THREE.PerspectiveCamera(28, .8, .1, 60);
+function thumb(id) {
+  if (thumbs[id]) return thumbs[id];
+  const ch = CHAR[id], s = (ch.special && ch.special.sc) || 1;
+  const c = buildCharacter(Object.assign({}, prof.look, {char:id, team:prof.team, cap:'none'})); c.root.rotation.y = .35; animChar(c, 'idle', 0); thumbScene.add(c.root);
+  thumbCam.position.set(0, 1.55*s, 3.6*s); thumbCam.lookAt(0, 1.45*s, 0); thumbR.render(thumbScene, thumbCam);
+  thumbs[id] = thumbR.domElement.toDataURL('image/png'); thumbScene.remove(c.root); return thumbs[id];
+}
+function makeThumbs() { for (const ch of CHARS) if (!ch.special || ch.pop) thumb(ch.id); }
+function fillThumbs(root) { const imgs = [...root.querySelectorAll('img[data-thumb]')]; const step = () => { const t0 = performance.now(); while (imgs.length && performance.now() - t0 < 25) { const im = imgs.shift(); im.src = thumb(im.dataset.thumb); } if (imgs.length) requestAnimationFrame(step); }; step(); }
+function charCard(c) { const mine = owns('char', c); return `<button class="char ${prof.look.char === c.id ? 'on' : ''}" data-char="${c.id}">${c.price && !mine ? `<span class="tag">${money(c.price)}</span>` : c.special ? '<span class="tag">Seu ✓</span>' : ''}<span class="ck">✓</span><img data-thumb="${c.id}" ${thumbs[c.id] ? `src="${thumbs[c.id]}"` : ''} alt="">${esc(c.name)}</button>`; }
+function openCharShop(cat = 'todos', q = '') {
+  const list = CHARS.filter(c => c.special && (cat === 'todos' || c.cat === cat) && c.name.toLowerCase().includes(q.toLowerCase()));
+  openModal(`<div class="kicker">Loja de personagens · ${money(30)} cada</div><h3>Ver mais personagens</h3><p class="mut" style="font-size:12.5px">Ficam na sua conta para sempre e funcionam em qualquer time. O Passe Personagens libera todos, inclusive os próximos.</p>
+  <input id="shopQ" placeholder="Buscar personagem" value="${esc(q)}" style="margin-top:10px">
+  <div class="row" style="margin-top:8px" id="shopCats">${CHAR_CATS.map(([id, n]) => `<button class="chip ${cat === id ? 'on' : ''}" data-cat="${id}">${n}</button>`).join('')}</div>
+  <div class="chars" id="shopGrid" style="margin-top:12px">${list.map(charCard).join('') || '<div class="mut">Nenhum personagem encontrado.</div>'}</div>
+  ${hasPass('personagens') ? '' : `<button class="btn gold" style="width:100%;margin-top:12px" id="shopPass">Passe Personagens · ${money(350)} · todos liberados</button>`}`);
+  fillThumbs($('#shopGrid'));
+  $('#shopQ').oninput = e => { const v = e.target.value; clearTimeout(G.shopT); G.shopT = setTimeout(() => { openCharShop(cat, v); const i = $('#shopQ'); i.focus(); i.setSelectionRange(v.length, v.length); }, 250); };
+  $('#shopCats').onclick = e => { const b = e.target.closest('[data-cat]'); if (b) openCharShop(b.dataset.cat, $('#shopQ').value); };
+  $('#shopGrid').onclick = e => { const b = e.target.closest('[data-char]'); if (!b) return; const c = CHAR[b.dataset.char]; requireItem('char', c, () => { prof.look.char = c.id; save(); closeModal(); renderChars(); refreshPreview(); if (P.c) rebuildPlayer(); toast(`${c.name} selecionado ✓`); }); };
+  const sp = $('#shopPass'); if (sp) sp.onclick = () => buyPass('personagens', () => openCharShop(cat, q));
 }
 $('#nick').value = prof.nick;
 $('#nick').addEventListener('input', () => { prof.nick = $('#nick').value; save(); });
@@ -1830,22 +2080,22 @@ function popHead(t, sub) { return `<div class="pop-h"><h3>${t}</h3><button class
 function refreshPop() {
   const el = $('#pop'), n = G.pop; if (!n) return;
   if (n === 'veiculos') {
-    el.innerHTML = popHead('Veículos', 'Escolha como circular. O item selecionado fica destacado. <b>F</b> desce do veículo.') + `<div class="grid3">${VEH.filter(forTeam).map(v => `<button class="tile ${P.vehId === v.id ? 'on' : ''}" data-veh="${v.id}">${v.key ? `<span class="k">${v.key}</span>` : ''}${owns('veh', v) ? '' : '<span class="lock">🔒</span>'}<span class="em">${v.em}</span>${v.name}</button>`).join('')}</div>${prof.passes.garagem ? '' : '<button class="btn gold" style="width:100%;margin-top:12px" data-act="pass-garagem">Toda a garagem em um passe →</button>'}`;
+    el.innerHTML = popHead('Veículos', 'Escolha como circular. O item selecionado fica destacado. <b>F</b> desce do veículo.') + `<div class="grid3">${VEH.filter(forTeam).map(v => `<button class="tile ${P.vehId === v.id ? 'on' : ''}" data-veh="${v.id}">${v.key ? `<span class="k">${v.key}</span>` : ''}${owns('veh', v) ? '' : `<span class="lock">${v.price ? money(v.price) : '♛ Premium'}</span>`}<span class="em">${v.em}</span>${v.name}</button>`).join('')}</div>${prof.passes.garagem ? '' : '<button class="btn gold" style="width:100%;margin-top:12px" data-act="pass-garagem">Toda a garagem em um passe · R$ 300,00 →</button>'}`;
   } else if (n === 'cartaz') {
     el.innerHTML = popHead('Cartaz / bandeira', 'Cartazes, bandeiras e objetos de mão. Um item equipado por vez.') + `<div id="popCustom"></div>`;
     renderCustom(el.querySelector('#popCustom'), true); el.querySelectorAll('#popCustom .sec').forEach((s, i) => { const h = s.querySelector('h4'); if (!h || !/Bandeiras|cartaz|Objetos/.test(h.textContent)) s.remove(); });
     if (prof.cartazes.length) el.querySelector('#popCustom').insertAdjacentHTML('beforeend', `<div class="sec"><h4>Gerenciar cartazes (${prof.cartazes.length}/${prof.premium ? 20 : 3})</h4><div class="row">${prof.cartazes.map((c, i) => `<button class="chip" data-k="delcartaz" data-id="${i}">🗑 ${esc(c.text.slice(0, 14))}</button>`).join('')}</div></div>`);
   } else if (n === 'spray') {
     const sp = prof.spray;
-    el.innerHTML = popHead('Spray', 'Clique no chão perto de você para pintar, ou aperte <b>E</b>.') + `<div class="sec"><h4>Estampa</h4><div class="row">${STAMPS.map(s => `<button class="chip ${sp.stamp === s.id ? 'on' : ''}" data-stamp="${s.id}">${s.name}</button>`).join('')}</div></div><div class="sec"><h4>Cor</h4><div class="row">${SPRAYC.map(c => `<button class="swatch ${sp.color === c ? 'on' : ''}" data-scol="${c}" style="background:${c}"></button>`).join('')}</div></div><div class="sec" style="display:flex;justify-content:space-between;align-items:center"><span class="mut">Cargas: <b style="color:#fff">${prof.premium ? '∞ (Premium)' : P.sprayCharges + ' / 10'}</b></span><button class="btn gold small" data-act="spraynow">Pintar agora (E)</button></div>`;
+    el.innerHTML = popHead('Spray', 'Clique no chão perto de você para pintar, ou aperte <b>E</b>.') + `<div class="sec"><h4>Estampa</h4><div class="row">${STAMPS.map(s => `<button class="chip ${sp.stamp === s.id ? 'on' : ''}" data-stamp="${s.id}">${s.name}</button>`).join('')}</div></div><div class="sec"><h4>Cor</h4><div class="row">${SPRAYC.map(c => `<button class="swatch ${sp.color === c ? 'on' : ''}" data-scol="${c}" style="background:${c}"></button>`).join('')}</div></div><div class="sec" style="display:flex;justify-content:space-between;align-items:center"><span class="mut">Cargas: <b style="color:#fff">${prof.premium ? '∞ (Premium)' : prof.sprayLeft + ' restantes'}</b></span><button class="btn gold small" data-act="spraynow">Pintar agora (E)</button></div>`;
   } else if (n === 'pvp') {
-    const has = prof.passes.pvp;
-    el.innerHTML = popHead('PvP', 'Equipamentos e combate em um só lugar. <b>P</b> abre o PvP; <b>Espaço</b> ataca. Só quem tem anel vermelho entra na briga.') + (has ? `<div class="list"><div class="li"><div><b>🏏 Taco de espuma</b><small>Dano leve · nocauteia em 4 golpes</small></div><span class="chip on">Equipado</span></div><div class="li"><div><b>Nocautes</b><small>Total da sua conta</small></div><b>${prof.kos || 0}</b></div></div><button class="btn ${P.pvp ? 'red' : 'gold'}" style="width:100%;margin-top:12px" data-act="pvptoggle">${P.pvp ? 'Desativar PvP' : 'Ativar PvP (P)'}</button>` : `<button class="btn gold" style="width:100%" data-act="pass-pvp">PvP · ${money(5)}</button>`);
+    const has = hasPvp();
+    el.innerHTML = popHead('PvP', 'Equipamentos e combate em um só lugar. <b>P</b> abre o PvP; <b>Espaço</b> ataca. Só quem tem anel vermelho entra na briga.') + (has ? `<div class="list"><div class="li"><div><b>🏏 Taco de espuma</b><small>Dano leve · nocauteia em 4 golpes</small></div><span class="chip on">Equipado</span></div><div class="li"><div><b>Nocautes</b><small>Total da sua conta</small></div><b>${prof.kos || 0}</b></div></div><button class="btn ${P.pvp ? 'red' : 'gold'}" style="width:100%;margin-top:12px" data-act="pvptoggle">${P.pvp ? 'Desativar PvP' : 'Ativar PvP (P)'}</button>` : `<button class="btn gold" style="width:100%" data-act="pvptoggle">PvP · ${money(PVP_PRICE)}</button>`);
   } else if (n === 'anim') {
     const A = [['dance', '💃', 'Dançar', '7'], ['jump', '🦘', 'Pular', '8'], ['wave', '👋', 'Acenar', '6'], ['clap', '👏', 'Aplaudir', '5'], ['sitground', '🧘', 'Sentar', '4']];
     el.innerHTML = popHead('Animações', 'Celebre, dance e interaja com as pessoas na avenida.') + `<div class="grid3">${A.map(([id, em, nm, k]) => `<button class="tile ${P.emote === id ? 'on' : ''}" data-emote="${id}"><span class="k">${k}</span><span class="em">${em}</span>${nm}</button>`).join('')}</div>`;
   } else if (n === 'custom') {
-    el.innerHTML = popHead('Customização', 'Mude o visual na hora. Tudo fica salvo neste navegador.') + `<div class="sec"><h4>Personagem</h4><div class="row">${CHARS.filter(forTeam).map(c => `<button class="chip ${prof.look.char === c.id ? 'on' : ''}" data-pchar="${c.id}">${c.name}${c.price && !owns('char', c) ? ` <span class="price">${money(c.price)}</span>` : ''}</button>`).join('')}</div></div><div class="sec"><h4>Time</h4><div class="row">${TEAMS.map(t => `<button class="chip ${prof.team === t.id ? 'on' : ''}" data-pteam="${t.id}"><img src="${flagDataURL('time', t, 30, 20)}" style="width:18px;height:12px;border-radius:2px">${t.name}</button>`).join('')}</div></div><div class="sec"><h4>Apelido</h4><div style="display:flex;gap:6px"><input id="pNick" maxlength="16" value="${esc(prof.nick)}"><button class="btn small" data-act="savenick">Trocar</button></div></div><div id="popCustom"></div>`;
+    el.innerHTML = popHead('Customização', 'Mude o visual na hora. Tudo fica salvo neste navegador.') + `<div class="sec"><h4>Personagem</h4><div class="row"><button class="chip" data-act="charshop">🛍 Loja de personagens</button>${CHARS.filter(c => forTeam(c) && (!c.special || owns('char', c) || c.id === prof.look.char)).map(c => `<button class="chip ${prof.look.char === c.id ? 'on' : ''}" data-pchar="${c.id}">${c.name}${c.price && !owns('char', c) ? ` <span class="price">${money(c.price)}</span>` : ''}</button>`).join('')}</div></div><div class="sec"><h4>Time</h4><div class="row">${TEAMS.map(t => `<button class="chip ${prof.team === t.id ? 'on' : ''}" data-pteam="${t.id}"><img src="${flagDataURL('time', t, 30, 20)}" style="width:18px;height:12px;border-radius:2px">${t.name}</button>`).join('')}</div></div><div class="sec"><h4>Apelido</h4><div style="display:flex;gap:6px"><input id="pNick" maxlength="16" value="${esc(prof.nick)}"><button class="btn small" data-act="savenick">Trocar</button></div></div><div id="popCustom"></div>`;
     renderCustom(el.querySelector('#popCustom'), true);
   }
 }
@@ -1864,6 +2114,7 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return; const a = b.dataset.act; audioInit();
   if (a === 'premium') openPremium();
   if (a === 'passes') openPasses();
+  if (a === 'charshop') openCharShop();
   if (a.startsWith('pass-')) buyPass(a.slice(5), () => refreshPop());
   if (a === 'superchat') openSuperchat();
   if (a === 'mapas') openMaps();
@@ -1891,35 +2142,56 @@ $('#chatMin').onclick = () => { const h = $('#chatBody').classList.toggle('hidde
 $('#msgs').addEventListener('click', e => { const r = e.target.closest('.rep'); if (r) { r.closest('.msg').style.opacity = .3; toast('Mensagem denunciada. Obrigado por ajudar a manter a avenida em paz.'); } });
 
 function openPremium() {
-  openModal(`<div class="kicker">Premium · opcional</div><h3>♛ Premium</h3><div class="price">${money(10)} <span class="mut" style="font-family:Inter;font-size:14px">pagamento único</span></div>
-  <div class="list">${['🚗 Moto, carro e carro de som liberados', '🎨 Spray ilimitado', '🪧 Cartazes ilimitados · até 20 salvos', '🎙 Participar e criar mesas de debate', '💘 Crush liberado', '♛ Selo dourado no seu nome e no chat'].map(t => `<div class="li"><b style="font-weight:600">${t}</b></div>`).join('')}</div>
+  openModal(`<div class="kicker">Premium · opcional</div><h3>♛ Premium</h3><div class="price">${money(PREMIUM_PRICE)} <span class="mut" style="font-family:Inter;font-size:14px">pagamento único</span></div>
+  <div class="list">${PREMIUM_BENEFITS.map(t => `<div class="li"><b style="font-weight:600">✓ ${t}</b></div>`).join('')}</div>
+  <p class="mut" style="font-size:12px;margin-top:10px">Bandeiras, personagens e veículos premium têm seus próprios preços — ou vêm nos passes.</p>
   ${prof.premium ? '<p style="margin-top:14px;color:var(--green);font-weight:700">Você já é Premium ✓</p>' : `<button class="btn gold" style="width:100%;margin-top:14px" id="goPrem">Quero ser Premium</button>`}<button class="btn ghost" style="width:100%;margin-top:6px" data-act="passes">Ver passes</button>`);
   const g = $('#goPrem'); if (g) g.onclick = () => buyPass('premium');
 }
 function openPasses() {
-  openModal(`<div class="kicker">Loja</div><h3>Premium e passes</h3><p class="mut">Jogar é grátis. Tudo aqui é opcional.</p><div class="list">${PASSES.map(p => { const has = p.id === 'premium' ? prof.premium : prof.passes[p.id]; return `<div class="li"><div><b>${p.name}</b><small>${p.desc}</small></div>${has ? '<span class="chip on">Ativo ✓</span>' : `<button class="btn gold small" data-buypass="${p.id}">${money(p.price)}</button>`}</div>`; }).join('')}</div>`);
+  openModal(`<div class="kicker">Loja</div><h3>Premium e passes</h3><p class="mut">Jogar é grátis. Tudo aqui é opcional e é pagamento único.</p><div class="list">${PASSES.map(p => { const has = p.id === 'premium' ? prof.premium : prof.passes[p.id] || (prof.passes.total && p.id !== 'total'); return `<div class="li" style="flex-direction:column;align-items:stretch;gap:6px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${p.name}</b><small style="color:var(--gold)">${p.tag}</small></div>${has ? '<span class="chip on">Ativo ✓</span>' : `<button class="btn gold small" data-buypass="${p.id}">${money(p.price)}</button>`}</div><small>${p.desc}</small><small>${p.benefits.map(b => '✓ ' + esc(b)).join('<br>')}</small></div>`; }).join('')}</div>`);
   $$('[data-buypass]').forEach(b => b.onclick = () => buyPass(b.dataset.buypass));
 }
+// Superchat (regras do original): R$ 5 a R$ 1.000 · até 200 letras · voz a partir de R$ 10 · telões a partir de R$ 100
+const SC = {min:5, voiceMin:10, adMin:100, max:1000, maxChars:200, suggested:[5, 10, 20, 50], voices:[['homem', 'Homem'], ['mulher', 'Mulher'], ['tiozao', 'Tiozão']]};
 function openSuperchat() {
   if (G.mode !== 'play') return toast('Entre no jogo para mandar superchat.');
-  let amt = 5;
-  openModal(`<div class="kicker">$ Superchat</div><h3>Destaque sua mensagem</h3><p class="mut">Fica fixada no chat, aparece nos telões da avenida e brilha em cima do seu personagem.</p>
-  <textarea id="scText" maxlength="90" rows="3" placeholder="Sua mensagem (até 90 letras)" style="margin-top:10px"></textarea>
-  <div class="row" style="margin-top:10px" id="scAmts">${[2, 5, 10, 20].map(v => `<button class="chip ${v === 5 ? 'on' : ''}" data-amt="${v}">${money(v)} · ${v*6}s fixado</button>`).join('')}</div>
+  let amt = 10, voice = 'homem';
+  openModal(`<div class="kicker">$ Superchat</div><h3>Destaque sua mensagem</h3><p class="mut" style="font-size:12.5px">Fica fixada no chat e brilha em cima do seu personagem. A partir de ${money(SC.voiceMin)} a avenida inteira <b>ouve</b> sua mensagem em voz; a partir de ${money(SC.adMin)} ela também vai para os <b>telões</b>.</p>
+  <textarea id="scText" maxlength="${SC.maxChars}" rows="3" placeholder="Sua mensagem (até ${SC.maxChars} letras)" style="margin-top:10px"></textarea>
+  <div class="row" style="margin-top:10px" id="scAmts">${SC.suggested.map(v => `<button class="chip ${v === amt ? 'on' : ''}" data-amt="${v}">${money(v)}</button>`).join('')}</div>
+  <div class="sec"><h4>Outro valor (R$ ${SC.min} a ${SC.max})</h4><input id="scCustom" type="number" min="${SC.min}" max="${SC.max}" step="1" value="${amt}"></div>
+  <div class="sec" id="scVoiceBox"><h4>Voz</h4><div class="row" id="scVoices">${SC.voices.map(([id, n]) => `<button class="chip ${id === voice ? 'on' : ''}" data-voice="${id}">${n}</button>`).join('')}</div></div>
+  <div class="mut" id="scInfo" style="font-size:12px;margin-top:8px"></div>
   <div class="demo">Modo demonstração: nenhum pagamento real é feito.</div><button class="btn gold" style="width:100%" id="scOk">Enviar superchat</button>`);
-  $('#scAmts').onclick = e => { const b = e.target.closest('[data-amt]'); if (!b) return; amt = +b.dataset.amt; $$('#scAmts .chip').forEach(c => c.classList.toggle('on', c === b)); };
+  const info = () => { $('#scVoiceBox').style.opacity = amt >= SC.voiceMin ? 1 : .4; $('#scInfo').textContent = `${money(amt)} · fixado ${Math.round(Math.min(600, amt*6))} s${amt >= SC.voiceMin ? ' · com voz' : ''}${amt >= SC.adMin ? ' · aparece nos telões' : ''}`; $('#scOk').textContent = `Enviar superchat · ${money(amt)}`; };
+  info();
+  $('#scAmts').onclick = e => { const b = e.target.closest('[data-amt]'); if (!b) return; amt = +b.dataset.amt; $('#scCustom').value = amt; $$('#scAmts .chip').forEach(c => c.classList.toggle('on', c === b)); info(); };
+  $('#scCustom').oninput = e => { amt = clamp(Math.round(+e.target.value || SC.min), SC.min, SC.max); $$('#scAmts .chip').forEach(c => c.classList.toggle('on', +c.dataset.amt === amt)); info(); };
+  $('#scVoices').onclick = e => { const b = e.target.closest('[data-voice]'); if (!b) return; voice = b.dataset.voice; $$('#scVoices .chip').forEach(c => c.classList.toggle('on', c === b)); speak('Teste de voz', voice); };
   $('#scOk').onclick = () => {
-    const text = filterBad($('#scText').value.trim()); if (!text) return toast('Escreva a mensagem.');
-    showSuper({nick:P.nick, team:prof.team, text, kind:'super', amount:amt, prem:prof.premium});
-    netSend({t:'super', text, amount:amt});
-    if (P.super) disposeSprite(P.super); P.super = labelSprite('$ ' + text.slice(0, 40), {bg:'rgba(201,162,58,.95)', fg:'#1d1a0e', h:.5}); P.super.position.y = P.c.raise ? 4.35 : 2.75; P.c.root.add(P.super); const s = P.super; setTimeout(() => { if (P.super === s) { disposeSprite(s); P.super = null; } }, amt*6000);
-    G.telIdx = 1 - 0; drawTeloes(); closeModal(); sfx('coin'); toast('Superchat enviado! Olha o telão 📺');
+    const text = filterBad($('#scText').value.trim()).slice(0, SC.maxChars); if (!text) return toast('Escreva a mensagem.');
+    const v = amt >= SC.voiceMin ? voice : null;
+    /* >>> integre o pagamento real aqui (valor: amt) <<< */
+    showSuper({nick:P.nick, team:prof.team, text, kind:'super', amount:amt, prem:prof.premium, voice:v});
+    netSend({t:'super', text, amount:amt, voice:v});
+    const dur = Math.min(600, amt*6)*1000;
+    if (P.super) disposeSprite(P.super); P.super = labelSprite('$ ' + text.slice(0, 40), {bg:'rgba(201,162,58,.95)', fg:'#1d1a0e', h:.5}); P.super.position.y = P.c.raise ? 4.35 : 2.75; P.c.root.add(P.super); const s = P.super; setTimeout(() => { if (P.super === s) { disposeSprite(s); P.super = null; } }, dur);
+    closeModal(); sfx('coin'); toast(amt >= SC.adMin ? 'Superchat enviado! Olha o telão 📺' : 'Superchat enviado! 💛');
   };
 }
+function speak(text, voice) {
+  if (!prof.settings.sound || !('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'pt-BR'; u.volume = prof.settings.vol;
+  const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('pt'));
+  if (vs.length) u.voice = voice === 'mulher' ? (vs.find(v => /female|mulher|maria|francisca|luciana|vit[oó]ria/i.test(v.name)) || vs[0]) : (vs.find(v => /male|daniel|ant[oô]nio|ricardo/i.test(v.name)) || vs[0]);
+  u.pitch = voice === 'mulher' ? 1.35 : voice === 'tiozao' ? .65 : .95; u.rate = voice === 'tiozao' ? .9 : 1.02;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
 function showSuper(m) {
-  pushChat(m); G.supers.push(m);
-  const pin = $('#pinned'); pin.innerHTML = `📌 <b>${esc(m.nick)}</b> · ${money(m.amount)}<br>${esc(m.text)}`; pin.classList.remove('hidden'); clearTimeout(G.pinT); G.pinT = setTimeout(() => pin.classList.add('hidden'), m.amount*6000);
-  G.telIdx = 1; drawTeloes();
+  pushChat(m); if (m.amount >= SC.adMin) { G.supers.push(m); G.telIdx = 1; drawTeloes(); }
+  const pin = $('#pinned'); pin.innerHTML = `📌 <b>${esc(m.nick)}</b> · ${money(m.amount)}<br>${esc(m.text)}`; pin.classList.remove('hidden'); clearTimeout(G.pinT); G.pinT = setTimeout(() => pin.classList.add('hidden'), Math.min(600, m.amount*6)*1000);
+  if (m.voice) speak(`${m.nick} disse: ${m.text}`, m.voice);
 }
 function openMaps() {
   openModal(`<div class="kicker">Mapas</div><h3>Para onde vamos?</h3><div class="list">${Object.entries(MAPS).map(([id, m]) => `<div class="li"><div><b>${m.name}</b><small>${m.city} · ${m.desc}</small></div>${prof.map === id ? '<span class="chip on">Aqui</span>' : `<button class="btn gold small" data-map="${id}">Ir</button>`}</div>`).join('')}</div>`);
@@ -1935,12 +2207,48 @@ function changeMap(id) {
   toast('📍 ' + world.def.name);
 }
 function openAd() {
-  const a = G.ad;
-  openModal(`<div class="kicker">📺 Anunciar no jogo</div><h3>Seu anúncio nos telões</h3><p class="mut">Os telões giram entre placar, superchats, corrida e anúncios.</p>
-  <div class="sec"><h4>Título</h4><input id="adT" maxlength="32" value="${esc(a.title)}"></div><div class="sec"><h4>Subtítulo</h4><input id="adS" maxlength="48" value="${esc(a.sub)}"></div>
-  <div class="sec"><h4>Cores</h4><div class="row"><input type="color" id="adB" value="${a.bg}" style="width:60px;height:38px;padding:2px"><input type="color" id="adF" value="${a.fg}" style="width:60px;height:38px;padding:2px"></div></div>
-  <div class="demo">Modo demonstração: o anúncio aparece só neste navegador e nenhuma cobrança é feita.</div><button class="btn gold" style="width:100%" id="adOk">Publicar nos telões</button>`);
-  $('#adOk').onclick = () => { G.ad = {title:$('#adT').value || 'ANUNCIE AQUI', sub:$('#adS').value, bg:$('#adB').value, fg:$('#adF').value}; G.telIdx = 2; drawTeloes(); closeModal(); toast('Anúncio no ar 📺'); };
+  const R = AD_RULES;
+  openModal(`<div class="kicker">📺 Anunciar no jogo</div><h3>Telões da ${esc(world.def.name)}</h3>
+  <p class="mut" style="font-size:12.5px">Cada telão tem ${R.slots} vagas que giram entre si, ordenadas pelo valor do lance. Seu anúncio fica garantido por ${R.protectH} h nas vagas e dura até ${R.days} dias. Link clicável a partir de ${money(R.linkMin)}.</p>
+  <div class="list">${world.teloes.map(tl => { const al = adsFor(tl.id), fl = adFloor(tl.id); return `<div class="li"><div><b>${esc(tl.name)}</b><small>${tl.vert ? 'Vertical 9:16' : 'Horizontal 16:9'} · lance mínimo ${money(fl)} · ${al.length}/${R.slots} vagas${al.length ? ` · maior lance ${money(al[0].amount)}` : ''}</small></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn gold small" data-adscreen="${tl.id}">Anunciar</button><button class="btn small" data-adsee="${tl.id}">Ver</button></div></div>`; }).join('')}</div>`);
+  $$('[data-adscreen]').forEach(b => b.onclick = () => openAdForm(b.dataset.adscreen));
+  $$('[data-adsee]').forEach(b => b.onclick = () => { const tl = world.teloes.find(t => t.id === b.dataset.adsee); closeModal(); if (G.mode === 'play') toggleAerial(true); const s = Math.max(6, tl.vert ? 9 : tl.pos.y*.9); cam.yaw = tl.rotY; cam.aTarget.set(tl.pos.x + Math.sin(tl.rotY), tl.pos.y - s*.35, tl.pos.z + Math.cos(tl.rotY)); cam.aH = s; toast('📺 ' + tl.name); });
+}
+function openAdForm(screen) {
+  const R = AD_RULES, tl = world.teloes.find(t => t.id === screen), fl = adFloor(screen), al = adsFor(screen);
+  const fifth = al.length >= R.slots ? al[R.slots - 1].amount : 0, suggest = Math.max(fl, fifth + 1);
+  let img = null;
+  openModal(`<div class="kicker">📺 ${esc(tl.name)}</div><h3>Seu anúncio</h3>
+  <p class="mut" style="font-size:12.5px">Lance mínimo ${money(fl)}.${fifth ? ` As ${R.slots} vagas estão ocupadas: para entrar, dê mais que ${money(fifth)}.` : ' Ainda há vaga livre.'}</p>
+  <canvas id="adPrev" width="${tl.vert ? 288 : 512}" height="${tl.vert ? 512 : 288}" style="width:${tl.vert ? '45%' : '100%'};display:block;margin:10px auto;border-radius:8px;background:#000"></canvas>
+  <div class="sec"><h4>Imagem (${tl.vert ? '9:16 vertical' : '16:9 horizontal'})</h4><input type="file" id="adFile" accept="image/png,image/jpeg,image/webp"></div>
+  <div class="sec"><h4>Ou só texto</h4><input id="adT" maxlength="40" placeholder="Título"><input id="adS" maxlength="60" placeholder="Subtítulo" style="margin-top:6px"><div class="row" style="margin-top:6px"><input type="color" id="adB" value="#ecd27e" style="width:60px;height:38px;padding:2px"><input type="color" id="adF" value="#14201a" style="width:60px;height:38px;padding:2px"></div></div>
+  <div class="sec"><h4>Link (opcional, a partir de ${money(R.linkMin)})</h4><input id="adL" maxlength="300" placeholder="https://..."></div>
+  <div class="sec"><h4>Valor do lance (R$ ${fl} a ${R.max.toLocaleString('pt-BR')})</h4><input id="adA" type="number" min="${fl}" max="${R.max}" step="1" value="${suggest}"></div>
+  <div class="demo">Modo demonstração: nenhum pagamento real é feito. Anúncios com ofensa, golpe ou conteúdo adulto são removidos.</div>
+  <div style="display:flex;gap:8px"><button class="btn gold" id="adOk" style="flex:1">Publicar · ${money(suggest)}</button><button class="btn" id="adBack">Voltar</button></div>`);
+  const c = $('#adPrev'), W = c.width, H = c.height, ctx = c.getContext('2d');
+  const cur = () => ({kind:img ? 'image' : 'text', img, title:$('#adT').value.trim(), sub:$('#adS').value.trim(), bg:$('#adB').value, fg:$('#adF').value, link:$('#adL').value.trim(), nick:prof.nick || 'Você', amount:+$('#adA').value});
+  const draw = () => { drawAd(ctx, W, H, Object.assign(cur(), img ? {img} : {})); $('#adOk').textContent = `Publicar · ${money(Math.max(0, +$('#adA').value || 0))}`; };
+  ['adT', 'adS', 'adB', 'adF', 'adL', 'adA'].forEach(id => $('#' + id).addEventListener('input', draw)); draw();
+  $('#adFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return; if (f.size > 25*1024*1024) return toast('Imagem acima de 25 MB.');
+    const im = new Image(); im.onload = () => { const k = document.createElement('canvas'); k.width = tl.vert ? 360 : 640; k.height = tl.vert ? 640 : 360; const g = k.getContext('2d'), s = Math.max(k.width/im.naturalWidth, k.height/im.naturalHeight); g.drawImage(im, (k.width - im.naturalWidth*s)/2, (k.height - im.naturalHeight*s)/2, im.naturalWidth*s, im.naturalHeight*s); img = k.toDataURL('image/jpeg', .82); URL.revokeObjectURL(im.src); draw(); };
+    im.src = URL.createObjectURL(f);
+  };
+  $('#adBack').onclick = openAd;
+  $('#adOk').onclick = () => {
+    const a = cur(); a.amount = Math.round(a.amount || 0);
+    if (a.amount < fl || a.amount > R.max) return toast(`O lance deve ficar entre ${money(fl)} e ${money(R.max)}.`);
+    if (!img && !a.title) return toast('Envie uma imagem ou escreva um título.');
+    if (a.link && a.amount < R.linkMin) return toast(`Link só a partir de ${money(R.linkMin)}.`);
+    if (a.link && !/^https?:\/\/[^\s@]+\.[^\s@]+/.test(a.link)) return toast('Link inválido. Use https://...');
+    /* >>> integre o pagamento real aqui (valor: a.amount) <<< */
+    a.title = filterBad(a.title); a.sub = filterBad(a.sub);
+    if (NET.on) { netSend(Object.assign({t:'ad', screen}, a)); toast('Enviando anúncio…'); }
+    else { ADS.list.push(Object.assign({id:'local' + Date.now(), screen, since:Date.now()/1000}, a)); drawTeloes(); toast('Anúncio no ar (só neste navegador, sem servidor) 📺'); }
+    closeModal(); sfx('coin');
+  };
 }
 function openHelp() {
   openModal(`<div class="kicker">Ajuda</div><h3>Como jogar</h3><div class="list">${[
@@ -2105,10 +2413,13 @@ function netHandle(m) {
     case 'snap': for (const [id, x, y, z, h, a, v, p, atk] of m.ps) { const r = remotes.get(id); if (!r) continue; if (r.tgt.distanceToSquared(_v.set(x, y, z)) > 900) r.pos.set(x, y, z); r.tgt.set(x, y, z); r.th = h; r.anim = a; r.pvp = !!p; if (atk && r.atk <= 0) r.atk = 1; if (r.veh !== v) remoteVeh(r, v); } break;
     case 'chat': { const r = remotes.get(m.id); pushChat({nick:m.nick, team:m.team, text:m.text, kind:'real', teamOnly:m.teamOnly, prem:m.prem}); if (r) say(r, m.text); break; }
     case 'spray': addSpray(m.x, m.z, m.stamp, m.color, m.nick, TEAM[m.team] || TEAMS[0]); break;
-    case 'super': { showSuper({nick:m.nick, team:m.team, text:m.text, kind:'super', amount:m.amount, prem:m.prem}); const r = remotes.get(m.id); if (r) say(r, '$ ' + m.text, {bg:'#f2d27a'}); break; }
+    case 'super': { showSuper({nick:m.nick, team:m.team, text:m.text, kind:'super', amount:m.amount, prem:m.prem, voice:m.voice}); const r = remotes.get(m.id); if (r) say(r, '$ ' + m.text, {bg:'#f2d27a'}); break; }
     case 'dmg': if (P.pvp && G.mode === 'play') { hurtPlayer(m.amount, {nick:m.nick}); burst(P.pos.x, 1.4, P.pos.z, '#ffdd55', 14); } break;
     case 'counts': NET.counts = m.c; NET.total = m.total; break;
     case 'sys': pushChat({kind:'sys', text:m.text}); break;
+    case 'ads': ADS.list = (m.ads || []).filter(a => a && a.screen); drawTeloes(); break;
+    case 'adOk': toast('Anúncio no ar nos telões 📺'); break;
+    case 'adFail': toast(m.msg || 'Não foi possível publicar o anúncio.'); break;
     case 'full': toast('Este mapa está lotado no momento. Tente outro mapa.'); break;
   }
 }

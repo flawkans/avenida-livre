@@ -77,7 +77,8 @@ Ele mostra um link `https://....trycloudflare.com` para mandar aos amigos. O lin
 | Posição, animações, veículos | Sim (10 atualizações por segundo) |
 | Chat da avenida e do time | Sim (com filtro de palavrões e limite de spam no servidor) |
 | Spray no chão | Sim |
-| Superchat (fixado e nos telões) | Sim |
+| Superchat (fixado, com voz a partir de R$ 10, nos telões a partir de R$ 100) | Sim |
+| Anúncios nos telões (leilão: 5 vagas por telão, 2 h garantidas, até 20 dias) | Sim, salvos em `ads/` no servidor |
 | PvP entre jogadores | Sim (o servidor confere distância, times e se os dois estão no PvP) |
 | Mapas | Cada mapa é uma sala separada |
 | Contagem "online" | Jogadores reais conectados |
@@ -86,6 +87,10 @@ Ele mostra um link `https://....trycloudflare.com` para mandar aos amigos. O lin
 - Jogadores reais aparecem com a **etiqueta do nome em azul**. Os bots têm etiqueta escura e podem ser desligados em ⚙ Configurações.
 - Denúncias feitas pelo cartão de um jogador real ficam salvas em `denuncias.log` no servidor.
 - Limite: 300 jogadores por mapa (dá para mudar em `MAX_PER_ROOM` no `server.py`).
+
+## Anúncios e o disco do servidor
+
+Os anúncios ficam na pasta `ads/` do servidor (imagens + `ads.json`). No plano grátis do Render o disco é apagado sempre que o servidor reinicia ou recebe uma atualização, então **os anúncios somem**. Para vender anúncios de verdade, use um plano pago com **Persistent Disk** montado em `ads/`, ou um banco de dados. Não suba a pasta `ads/` para o GitHub.
 
 ## Ainda não tem
 
